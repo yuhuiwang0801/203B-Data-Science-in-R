@@ -41,7 +41,7 @@ sessionInfo()
 
 5. After this course, you can make this repository public and use it to demonstrate your skill sets on job market.
 
-**Answer:** [github](https://github.com/yuhuiwang0801/biostat-203b-2024-winter)
+**Answer:** [github](https://github.com/yuhuiwang0801/biostat-203b-2024-winter).
 
 ## Q2. Data ethics training
 
