@@ -55,7 +55,7 @@ This exercise (and later in this course) uses the [MIMIC-IV data v2.2](https://p
 
 1. Make the MIMIC v2.2 data available at location `~/mimic`. 
 
-**Answer:** I have downloaded the MIMIC v2.2 data and put it from my desktop to the folder `~/mimic`, with code:
+**Answer:** I have downloaded the MIMIC v2.2 data and copy it from my desktop to the folder `~/mimic`, with code:
 ```{bash}
 #| eval: false
 cp -r /Users/wang/Desktop/mimic ~/
@@ -72,6 +72,7 @@ Refer to the documentation <https://physionet.org/content/mimiciv/2.2/> for deta
 
 2. Display the contents in the folders `hosp` and `icu` using Bash command `ls -l`. Why are these data files distributed as `.csv.gz` files instead of `.csv` (comma separated values) files? Read the page <https://mimic.mit.edu/docs/iv/> to understand what's in each folder.
 
+
 **Answer:**
 ```{bash}
 #| eval: false
@@ -79,8 +80,23 @@ Refer to the documentation <https://physionet.org/content/mimiciv/2.2/> for deta
 ls -l ~/mimic/hosp
 ls -l ~/mimic/icu
 ```
+That is because the data files are too large to be stored in `.csv` files. The `.csv.gz` files are compressed files, which are much smaller than the original files.
+
 
 3. Briefly describe what Bash commands `zcat`, `zless`, `zmore`, and `zgrep` do.
+
+**Answer:**
+```{bash}
+#| eval: false
+printf "zcat\n"
+man zcat | head -30
+printf "zless\n"
+man zless | head -30
+printf "zmore\n"
+man zmore | head -30
+printf "zgrep\n"
+man zgrep | head -30
+```
 
 4. (Looping in Bash) What's the output of the following bash script?
 ```{bash}
@@ -92,11 +108,72 @@ done
 ```
 Display the number of lines in each data file using a similar loop. (Hint: combine linux commands `zcat <` and `wc -l`.)
 
+**Answer:**
+```{bash}
+#| eval: false
+for datafile in ~/mimic/hosp/{a,l,pa}*.gz
+do
+  printf "$datafile\n"
+  zcat < $datafile | wc -l
+done
+```
+
 5. Display the first few lines of `admissions.csv.gz`. How many rows are in this data file? How many unique patients (identified by `subject_id`) are in this data file? Do they match the number of patients listed in the `patients.csv.gz` file? (Hint: combine Linux commands `zcat <`, `head`/`tail`, `awk`, `sort`, `uniq`, `wc`, and so on.)
+
+**Answer:**
+```{bash}
+#| eval: false
+printf "The first 5 lines of admissions.csv.gz are:\n"
+zcat < ~/mimic/hosp/admissions.csv.gz | head -5
+printf "The number of rows in this data file is:\n"
+zcat < ~/mimic/hosp/admissions.csv.gz | wc -l
+printf "The number of unique patients is:\n"
+zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $1}' | sort | uniq | wc -l
+printf "The number of patients listed in the patients.csv.gz file is:\n"
+zcat < ~/mimic/hosp/patients.csv.gz | wc -l
+```
+Therefore, the number of unique patients in `admissions.csv.gz` does not match the number of patients listed in the `patients.csv.gz` file.
+
 
 6. What are the possible values taken by each of the variable `admission_type`, `admission_location`, `insurance`, and `ethnicity`? Also report the count for each unique value of these variables. (Hint: combine Linux commands `zcat`, `head`/`tail`, `awk`, `uniq -c`, `wc`, and so on; skip the header line.)
 
+**Answer:**
+```{bash}
+#| eval: false
+
+printf "The possible values taken by admission_type are:\n"
+zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $6}' | sort | uniq -c
+
+printf "The possible values taken by admission_location are:\n"
+zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $8}' | sort | uniq -c
+
+printf "The possible values taken by insurance are:\n"
+zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $10}' | sort | uniq -c
+
+printf "The possible values taken by ethnicity are:\n"
+zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $13}' | sort | uniq -c
+```
+
 7. _To compress, or not to compress. That's the question._ Let's focus on the big data file `labevents.csv.gz`. Compare compressed gz file size to the uncompressed file size. Compare the run times of `zcat < ~/mimic/labevents.csv.gz | wc -l` versus `wc -l labevents.csv`. Discuss the trade off between storage and speed for big data files. (Hint: `gzip -dk < FILENAME.gz > ./FILENAME`. Remember to delete the large `labevents.csv` file after the exercise.)
+
+**Answer:**
+```{bash}
+#| eval: false
+
+printf "The compressed gz file size is:\n"
+ls -lh ~/mimic/hosp/labevents.csv.gz
+
+gzip -dk < ~/mimic/hosp/labevents.csv.gz > ./labevents.csv
+printf "The uncompressed file size is:\n"
+ls -lh labevents.csv
+
+printf "The run time comparison for compressed and uncompressed files are:\n"
+time zcat < ~/mimic/hosp/labevents.csv.gz | wc -l
+
+time wc -l labevents.csv
+```
+The compressed file size is 1.8G, while the uncompressed file size is 13G. The run time for the compressed file is 14.364s, while the run time for the uncompressed file is 13.720s. In general, it is a trade off between storage and speed. However, it is worth to use compressed files since the run time is not much longer than the uncompressed file, while the compressed file size is much smaller than the uncompressed file size.
+
 
 ## Q4. Who's popular in Price and Prejudice
 
@@ -106,6 +183,10 @@ Display the number of lines in each data file using a similar loop. (Hint: combi
 wget -nc http://www.gutenberg.org/cache/epub/42671/pg42671.txt
 ```
 Explain what `wget -nc` does. Do **not** put this text file `pg42671.txt` in Git. Complete the following loop to tabulate the number of times each of the four characters is mentioned using Linux commands.
+
+**Answer:**
+`wget -nc` downloads the file from the given URL if it does not exist in the current directory, and does nothing if it already exists.
+
 ```{bash}
 #| eval: false
 wget -nc http://www.gutenberg.org/cache/epub/42671/pg42671.txt
@@ -113,6 +194,8 @@ for char in Elizabeth Jane Lydia Darcy
 do
   echo $char:
   # some bash commands here
+  grep -o -i $char pg42671.txt | wc -l
+  
 done
 ```
 
@@ -127,6 +210,9 @@ and
 echo 'hello, world' >> test2.txt
 ```
 
+**Answer:**
+The first command will overwrite the file `test1.txt` if it already exists, while the second command will append the text to the end of the file `test2.txt` if it already exists.
+
 3. Using your favorite text editor (e.g., `vi`), type the following and save the file as `middle.sh`:
 ```{bash eval=FALSE}
 #!/bin/sh
@@ -137,13 +223,72 @@ head -n "$2" "$1" | tail -n "$3"
 Using `chmod` to make the file executable by the owner, and run
 ```{bash}
 #| eval: false
+chmod +x middle.sh
 ./middle.sh pg42671.txt 20 5
 ```
 Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this shell script. Why do we need the first line of the shell script?
 
+**Answer:**
+The output is the 5 lines starting from the 16th line to the 20th line of the file `pg42671.txt`. `"$1"`, `"$2"`, and `"$3"` are the first, second, and third arguments of the shell script, and it will be clarified when executing. We need the first line of the shell script to tell the system that this is a shell script.
+
 ## Q5. More fun with Linux
 
 Try following commands in Bash and interpret the results: `cal`, `cal 2024`, `cal 9 1752` (anything unusual?), `date`, `hostname`, `arch`, `uname -a`, `uptime`, `who am i`, `who`, `w`, `id`, `last | head`, `echo {con,pre}{sent,fer}{s,ed}`, `time sleep 5`, `history | tail`.
+
+**Answer:**
+```{bash}
+#| eval: false
+printf "cal:\n"
+cal
+printf "cal 2024:\n"
+cal 2024
+printf "cal 9 1752:\n"
+cal 9 1752
+printf "date:\n"
+date
+printf "hostname:\n"
+hostname
+printf "arch:\n"
+arch
+printf "uname -a:\n"
+uname -a
+printf "uptime:\n"
+uptime
+printf "who am i:\n"
+who am i
+printf "who:\n"
+who
+printf "w:\n"
+w
+printf "id:\n"
+id
+printf "last | head:\n"
+last | head
+printf "echo {con,pre}{sent,fer}{s,ed}:\n"
+echo {con,pre}{sent,fer}{s,ed}
+printf "time sleep 5:\n"
+time sleep 5
+printf "history | tail:\n"
+history | tail
+```
+cal: Displays the calendar for the current month.
+cal 2024: Shows the calendar for the entire year 2024.
+cal 9 1752: Displays the calendar for September 1752. The calendar for September 1752 is different from other months because the Gregorian calendar was adopted in September 1752, and 11 days were skipped to make up for the difference between the Julian calendar and the Gregorian calendar.
+date: Displays the current date and time.
+hostname: Displays the name of the host.
+arch: Displays the machine architecture.
+uname -a: Displays the system information.
+uptime: Displays the current time, how long the system has been running, how many users are currently logged on, and the system load averages for the past 1, 5, and 15 minutes.
+who am i: Displays the current user.
+who: Displays the users who are currently logged on.
+w: Displays the users who are currently logged on and what they are doing.
+id: Displays the current user's UID, GID, and groups.
+last | head: Displays the last 10 logins.
+echo {con,pre}{sent,fer}{s,ed}: Displays the words "consents", "confer", "presents", "prefer", "sents", "sented", "confers", "confered", "prefers", "prefered".
+time sleep 5: Displays the time it takes to execute the command "sleep 5".
+history | tail: Displays the last 10 commands in the history.
+
+
 
 ## Q6. Book
 
