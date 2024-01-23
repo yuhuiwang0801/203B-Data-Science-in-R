@@ -272,20 +272,35 @@ printf "history | tail:\n"
 history | tail
 ```
 cal: Displays the calendar for the current month.
+
 cal 2024: Shows the calendar for the entire year 2024.
+
 cal 9 1752: Displays the calendar for September 1752. The calendar for September 1752 is different from other months because the Gregorian calendar was adopted in September 1752, and 11 days were skipped to make up for the difference between the Julian calendar and the Gregorian calendar.
+
 date: Displays the current date and time.
+
 hostname: Displays the name of the host.
+
 arch: Displays the machine architecture.
+
 uname -a: Displays the system information.
+
 uptime: Displays the current time, how long the system has been running, how many users are currently logged on, and the system load averages for the past 1, 5, and 15 minutes.
+
 who am i: Displays the current user.
+
 who: Displays the users who are currently logged on.
+
 w: Displays the users who are currently logged on and what they are doing.
+
 id: Displays the current user's UID, GID, and groups.
+
 last | head: Displays the last 10 logins.
+
 echo {con,pre}{sent,fer}{s,ed}: Displays the words "consents", "confer", "presents", "prefer", "sents", "sented", "confers", "confered", "prefers", "prefered".
+
 time sleep 5: Displays the time it takes to execute the command "sleep 5".
+
 history | tail: Displays the last 10 commands in the history.
 
 
