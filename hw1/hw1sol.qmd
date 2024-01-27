@@ -90,10 +90,22 @@ That is because the data files are too large to be stored in `.csv` files. The `
 #| eval: false
 printf "zcat\n"
 man zcat | head -30
+```
+
+```{bash}
+#| eval: false
 printf "zless\n"
 man zless | head -30
+```
+
+```{bash}
+#| eval: false
 printf "zmore\n"
 man zmore | head -30
+```
+
+```{bash}
+#| eval: false
 printf "zgrep\n"
 man zgrep | head -30
 ```
@@ -126,10 +138,22 @@ done
 #| eval: false
 printf "The first 5 lines of admissions.csv.gz are:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | head -5
+```
+
+```{bash}
+#| eval: false
 printf "The number of rows in this data file is:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | wc -l
+```
+
+```{bash}
+#| eval: false
 printf "The number of unique patients is:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $1}' | sort | uniq | wc -l
+```
+
+```{bash}
+#| eval: false
 printf "The number of patients listed in the patients.csv.gz file is:\n"
 zcat < ~/mimic/hosp/patients.csv.gz | wc -l
 ```
@@ -141,16 +165,24 @@ Therefore, the number of unique patients in `admissions.csv.gz` does not match t
 **Answer:**
 ```{bash}
 #| eval: false
-
 printf "The possible values taken by admission_type are:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $6}' | sort | uniq -c
+```
 
+```{bash}
+#| eval: false
 printf "The possible values taken by admission_location are:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $8}' | sort | uniq -c
+```
 
+```{bash}
+#| eval: false
 printf "The possible values taken by insurance are:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $10}' | sort | uniq -c
+```
 
+```{bash}
+#| eval: false
 printf "The possible values taken by ethnicity are:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $13}' | sort | uniq -c
 ```
@@ -160,17 +192,21 @@ zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $13}' | sort | un
 **Answer:**
 ```{bash}
 #| eval: false
-
 printf "The compressed gz file size is:\n"
 ls -lh ~/mimic/hosp/labevents.csv.gz
+```
 
+```{bash}
+#| eval: false
 gzip -dk < ~/mimic/hosp/labevents.csv.gz > ./labevents.csv
 printf "The uncompressed file size is:\n"
 ls -lh labevents.csv
+```
 
+```{bash}
+#| eval: false
 printf "The run time comparison for compressed and uncompressed files are:\n"
 time zcat < ~/mimic/hosp/labevents.csv.gz | wc -l
-
 time wc -l labevents.csv
 ```
 The compressed file size is 1.8G, while the uncompressed file size is 13G. The run time for the compressed file is 14.364s, while the run time for the uncompressed file is 13.720s. 
@@ -254,30 +290,82 @@ printf "cal 2024:\n"
 cal 2024
 printf "cal 9 1752:\n"
 cal 9 1752
+```
+
+```{bash}
+#| eval: false
 printf "date:\n"
 date
+```
+
+```{bash}
+#| eval: false
 printf "hostname:\n"
 hostname
+```
+
+```{bash}
+#| eval: false
 printf "arch:\n"
 arch
+```
+
+```{bash}
+#| eval: false
 printf "uname -a:\n"
 uname -a
+```
+
+```{bash}
+#| eval: false
 printf "uptime:\n"
 uptime
+```
+
+```{bash}
+#| eval: false
 printf "who am i:\n"
 who am i
+```
+
+```{bash}
+#| eval: false
 printf "who:\n"
 who
+```
+
+```{bash}
+#| eval: false
 printf "w:\n"
 w
+```
+
+```{bash}
+#| eval: false
 printf "id:\n"
 id
+```
+
+```{bash}
+#| eval: false
 printf "last | head:\n"
 last | head
+```
+
+```{bash}
+#| eval: false
 printf "echo {con,pre}{sent,fer}{s,ed}:\n"
 echo {con,pre}{sent,fer}{s,ed}
+```
+
+```{bash}
+#| eval: false
 printf "time sleep 5:\n"
 time sleep 5
+```
+
+```{bash}
+#| eval: false
 printf "history | tail:\n"
 history | tail
 ```
@@ -325,4 +413,5 @@ The point of this exercise is (1) to get the book for free and (2) to see an exa
 
 For grading purpose, include a screenshot of Section 4.1.5 of the book here.
 
+**Answer:**
 ![](4.1.5.jpg)
