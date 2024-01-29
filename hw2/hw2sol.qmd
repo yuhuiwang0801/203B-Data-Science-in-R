@@ -351,3 +351,34 @@ zcat < ~/mimic/icu/d_items.csv.gz | head -10
 In later exercises, we are interested in the vitals for ICU patients: heart rate (220045), mean non-invasive blood pressure (220181), systolic non-invasive blood pressure (220179), body temperature in Fahrenheit (223761), and respiratory rate (220210). Retrieve a subset of `chartevents.csv.gz` only containing these items, using the favorite method you learnt in Q2. 
 
 Document the steps and show code. Display the number of rows and the first 10 rows of the result tibble.
+
+**Answer:**
+I would like to use Apache Arrow combined with Parquet to ingest and filter the data.
+Decompress the file:
+```{bash}
+zcat < ~/mimic/icu/chartevents.csv.gz > chartevents.csv
+```
+Save a parquet file for future use:
+```{r}
+chartevents <- arrow::open_dataset("chartevents.csv", format = "csv")
+arrow::write_dataset(chartevents, "chartevents.parquet")
+```
+Read the parquet file:
+```{r}
+chartevents <- arrow::open_dataset("chartevents.parquet", format = "parquet")
+```
+Filter the data with certain itemid:
+```{r}
+chartevents_filtered <- chartevents %>% 
+    dplyr::filter(itemid %in% c(220045, 220181, 220179, 223761, 220210))
+```
+Display the number of rows:
+```{r}
+nrow(chartevents_filtered)
+```
+Display the first 10 rows:
+```{r}
+chartevents_filtered %>% 
+    collect() %>% 
+    head(10)
+```
