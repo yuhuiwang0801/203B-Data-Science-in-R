@@ -20,7 +20,7 @@ knitr:
     fig.height: 4
     message: FALSE
 execute:
-  eval: false    
+  eval: true  
 ---
 
 Display machine information for reproducibility:
@@ -167,7 +167,7 @@ Try to ingest `labevents.csv.gz` using `read_csv`. What happens? If it takes mor
 ```{r eval=FALSE}
 system.time(read_csv("~/mimic/hosp/labevents.csv.gz"))
 ```
-It takes more than 5 minutes on my computer (elapsed time: 1886.073 seconds), and I abort the program. 
+It takes more than 5 minutes on my computer (elapsed time: 1886.073 seconds), so I abort the program. 
 
 
 ### Q2.2 Ingest selected columns of `labevents.csv.gz` by `read_csv`
@@ -178,7 +178,7 @@ Try to ingest only columns `subject_id`, `itemid`, `charttime`, and `valuenum` i
 ```{r}
 system.time(read_csv("~/mimic/hosp/labevents.csv.gz", col_select = c("subject_id", "itemid", "charttime", "valuenum")))
 ```
-It partly solved the issue. The run time is much faster than the previous one, but it still takes long time to ingest (elapsed time: 365.601 seconds).
+It partly solved the issue. The run time is much faster than the previous one, but it still takes long time to ingest.
 
 ### Q2.3 Ingest subset of `labevents.csv.gz`
 
@@ -198,7 +198,6 @@ zcat < ~/mimic/hosp/labevents.csv.gz | head -3
 ```
 
 ```{bash}
-#| eval: false
 zcat < ~/mimic/hosp/labevents.csv.gz | awk -F, 'BEGIN{OFS=","} {if ($5 == 50912 || $5 == 50971 || $5 == 50983 || $5 == 50902 || $5 == 50882 || $5 == 51221 || $5 == 51301 || $5 == 50931) print $2,$5,$7,$10}' | gzip > labevents_filtered.csv.gz
 ```
 First 10 lines display:
@@ -213,7 +212,7 @@ zcat < labevents_filtered.csv.gz | wc -l
 ```{r}
 system.time(read_csv("labevents_filtered.csv.gz"))
 ```
-There are 24855909 lines in the filtered file. The elapsed time is 5.283 seconds.
+There are 24855909 lines in the filtered file. The elapsed time is approximate 6 - 8 seconds.
 
 
 ### Q2.4 Ingest `labevents.csv` by Apache Arrow
@@ -249,6 +248,7 @@ nrow(labevents_filtered)
 
 ```{r}
 labevents_filtered %>% 
+    arrange(subject_id) %>%
     collect() %>% 
     head(10)
 ```
@@ -291,6 +291,7 @@ nrow(labevents_parquet_filtered)
 
 ```{r}
 labevents_parquet_filtered %>% 
+    arrange(subject_id) %>%
     collect() %>% 
     head(10)
 ```
@@ -330,10 +331,11 @@ nrow(labevents_duckdb_filtered)
 
 ```{r}
 labevents_duckdb_filtered %>% 
+    arrange(subject_id) %>%
     collect() %>% 
     head(10)
 ```
-The process took elapsed time of 4.034 seconds. The number of rows and the first 10 rows are the same as Q2.3.
+The process took elapsed time of 4 - 6 seconds. The number of rows and the first 10 rows are the same as Q2.3.
 
 DuckDB is basically a online analytical processing database. It leverages Structured Query Language (SQL) to analyze data fastly.
 
