@@ -107,6 +107,7 @@ The resultant dataframe or tibble use different memory usage. In particular, `fr
 Re-ingest `admissions.csv.gz` by indicating appropriate column data types in `read_csv`. Does the run time change? How much memory does the result tibble use? (Hint: `col_types` argument in `read_csv`.)
 
 **Answer:**
+Data types follow the Fread data types since it is the fastest way.
 ```{r}
 #Data types follow the Fread data types
 col_types <- cols(
@@ -175,10 +176,11 @@ It takes more than 5 minutes on my computer (elapsed time: 1886.073 seconds), so
 Try to ingest only columns `subject_id`, `itemid`, `charttime`, and `valuenum` in `labevents.csv.gz` using `read_csv`.  Does this solve the ingestion issue? (Hint: `col_select` argument in `read_csv`.)
 
 **Answer:**
-```{r}
+```{r eval=FALSE}
 system.time(read_csv("~/mimic/hosp/labevents.csv.gz", col_select = c("subject_id", "itemid", "charttime", "valuenum")))
 ```
-It partly solved the issue. The run time is much faster than the previous one, but it still takes long time to ingest.
+It partly solved the issue. The run time (elapsed time 318.679) is much faster than the previous one. but it still takes long time to ingest. It will not work in the real working environment. Here I make it not run the code to avoid the long render time.
+
 
 ### Q2.3 Ingest subset of `labevents.csv.gz`
 
@@ -198,6 +200,7 @@ zcat < ~/mimic/hosp/labevents.csv.gz | head -3
 ```
 
 ```{bash}
+#| eval: false
 zcat < ~/mimic/hosp/labevents.csv.gz | awk -F, 'BEGIN{OFS=","} {if ($5 == 50912 || $5 == 50971 || $5 == 50983 || $5 == 50902 || $5 == 50882 || $5 == 51221 || $5 == 51301 || $5 == 50931) print $2,$5,$7,$10}' | gzip > labevents_filtered.csv.gz
 ```
 First 10 lines display:
@@ -237,8 +240,8 @@ zcat < ~/mimic/hosp/labevents.csv.gz > labevents.csv
 system.time({
   labevents <- arrow::open_dataset("labevents.csv", format = "csv")
   labevents_filtered <- labevents %>% 
-    dplyr::select(subject_id, itemid, charttime, valuenum) %>% 
-    dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931))
+  dplyr::select(subject_id, itemid, charttime, valuenum) %>% 
+  dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931))
 })
 ```
 
@@ -248,9 +251,9 @@ nrow(labevents_filtered)
 
 ```{r}
 labevents_filtered %>% 
-    arrange(subject_id) %>%
-    collect() %>% 
-    head(10)
+  arrange(subject_id) %>%
+  collect() %>% 
+  head(10)
 ```
 Results are the same as Q2.3.
 
@@ -280,8 +283,8 @@ object.size("labevents.parquet")
 system.time({
   labevents_parquet <- arrow::open_dataset("labevents.parquet")
   labevents_parquet_filtered <- labevents_parquet %>% 
-    dplyr::select(subject_id, itemid, charttime, valuenum) %>% 
-    dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931))
+  dplyr::select(subject_id, itemid, charttime, valuenum) %>% 
+  dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931))
 })
 ```
 
@@ -291,9 +294,9 @@ nrow(labevents_parquet_filtered)
 
 ```{r}
 labevents_parquet_filtered %>% 
-    arrange(subject_id) %>%
-    collect() %>% 
-    head(10)
+  arrange(subject_id) %>%
+  collect() %>% 
+  head(10)
 ```
 The Parquet file is 136 bytes. The elapsed time of the process is 0.151 seconds. The number of rows and the first 10 rows of the result tibble are the same as Q2.3.
 
@@ -319,9 +322,9 @@ system.time({
   labevents_parquet <- arrow::open_dataset("labevents.parquet")
   labevents_duckdb <- arrow::to_duckdb(labevents_parquet)
   labevents_duckdb_filtered <- labevents_duckdb %>% 
-    dplyr::select(subject_id, itemid, charttime, valuenum) %>% 
-    dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)) %>%
-    dplyr::collect()
+  dplyr::select(subject_id, itemid, charttime, valuenum) %>% 
+  dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)) %>%
+  dplyr::collect()
 })
 ```
 
@@ -331,9 +334,9 @@ nrow(labevents_duckdb_filtered)
 
 ```{r}
 labevents_duckdb_filtered %>% 
-    arrange(subject_id) %>%
-    collect() %>% 
-    head(10)
+  arrange(subject_id) %>%
+  collect() %>% 
+  head(10)
 ```
 The process took elapsed time of 4 - 6 seconds. The number of rows and the first 10 rows are the same as Q2.3.
 
@@ -372,7 +375,7 @@ chartevents <- arrow::open_dataset("chartevents.parquet", format = "parquet")
 Filter the data with certain itemid:
 ```{r}
 chartevents_filtered <- chartevents %>% 
-    dplyr::filter(itemid %in% c(220045, 220181, 220179, 223761, 220210))
+  dplyr::filter(itemid %in% c(220045, 220181, 220179, 223761, 220210))
 ```
 Display the number of rows:
 ```{r}
@@ -381,6 +384,6 @@ nrow(chartevents_filtered)
 Display the first 10 rows:
 ```{r}
 chartevents_filtered %>% 
-    collect() %>% 
-    head(10)
+  collect() %>% 
+  head(10)
 ```
