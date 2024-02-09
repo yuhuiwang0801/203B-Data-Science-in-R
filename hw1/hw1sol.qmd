@@ -63,7 +63,6 @@ cp -r /Users/wang/Desktop/mimic ~/
 
 The following code shows the files in the folder.
 ```{bash}
-#| eval: false
 ls -l ~/mimic/
 ```
 Refer to the documentation <https://physionet.org/content/mimiciv/2.2/> for details of data files. Please, do **not** put these data files into Git; they are big. Do **not** copy them into your directory. Do **not** decompress the gz data files. These create unnecessary big files and are not big-data-friendly practices. Read from the data folder `~/mimic` directly in following exercises. 
@@ -75,7 +74,6 @@ Refer to the documentation <https://physionet.org/content/mimiciv/2.2/> for deta
 
 **Answer:**
 ```{bash}
-#| eval: false
 # display the contents in the folders hosp and icu
 ls -l ~/mimic/hosp
 ls -l ~/mimic/icu
@@ -87,25 +85,21 @@ That is because the data files are too large to be stored in `.csv` files. The `
 
 **Answer:**
 ```{bash}
-#| eval: false
 printf "zcat\n"
 man zcat | head -30
 ```
 
 ```{bash}
-#| eval: false
 printf "zless\n"
 man zless | head -30
 ```
 
 ```{bash}
-#| eval: false
 printf "zmore\n"
 man zmore | head -30
 ```
 
 ```{bash}
-#| eval: false
 printf "zgrep\n"
 man zgrep | head -30
 ```
@@ -113,7 +107,6 @@ man zgrep | head -30
 
 4. (Looping in Bash) What's the output of the following bash script?
 ```{bash}
-#| eval: false
 for datafile in ~/mimic/hosp/{a,l,pa}*.gz
 do
   ls -l $datafile
@@ -123,7 +116,6 @@ Display the number of lines in each data file using a similar loop. (Hint: combi
 
 **Answer:**
 ```{bash}
-#| eval: false
 for datafile in ~/mimic/hosp/{a,l,pa}*.gz
 do
   printf "$datafile\n"
@@ -135,25 +127,21 @@ done
 
 **Answer:**
 ```{bash}
-#| eval: false
 printf "The first 5 lines of admissions.csv.gz are:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | head -5
 ```
 
 ```{bash}
-#| eval: false
 printf "The number of rows in this data file is:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | wc -l
 ```
 
 ```{bash}
-#| eval: false
 printf "The number of unique patients is:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $1}' | sort | uniq | wc -l
 ```
 
 ```{bash}
-#| eval: false
 printf "The number of patients listed in the patients.csv.gz file is:\n"
 zcat < ~/mimic/hosp/patients.csv.gz | wc -l
 ```
@@ -164,25 +152,21 @@ Therefore, the number of unique patients in `admissions.csv.gz` does not match t
 
 **Answer:**
 ```{bash}
-#| eval: false
 printf "The possible values taken by admission_type are:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $6}' | sort | uniq -c
 ```
 
 ```{bash}
-#| eval: false
 printf "The possible values taken by admission_location are:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $8}' | sort | uniq -c
 ```
 
 ```{bash}
-#| eval: false
 printf "The possible values taken by insurance are:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $10}' | sort | uniq -c
 ```
 
 ```{bash}
-#| eval: false
 printf "The possible values taken by ethnicity are:\n"
 zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $13}' | sort | uniq -c
 ```
@@ -191,20 +175,17 @@ zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, 'NR > 1 {print $13}' | sort | un
 
 **Answer:**
 ```{bash}
-#| eval: false
 printf "The compressed gz file size is:\n"
 ls -lh ~/mimic/hosp/labevents.csv.gz
 ```
 
 ```{bash}
-#| eval: false
 gzip -dk < ~/mimic/hosp/labevents.csv.gz > ./labevents.csv
 printf "The uncompressed file size is:\n"
 ls -lh labevents.csv
 ```
 
 ```{bash}
-#| eval: false
 printf "The run time comparison for compressed and uncompressed files are:\n"
 time zcat < ~/mimic/hosp/labevents.csv.gz | wc -l
 time wc -l labevents.csv
@@ -229,7 +210,6 @@ Explain what `wget -nc` does. Do **not** put this text file `pg42671.txt` in Git
 `wget -nc` downloads the file from the given URL if it does not exist in the current directory, and does nothing if it already exists.
 
 ```{bash}
-#| eval: false
 wget -nc http://www.gutenberg.org/cache/epub/42671/pg42671.txt
 for char in Elizabeth Jane Lydia Darcy
 do
@@ -242,12 +222,10 @@ done
 
 2. What's the difference between the following two commands?
 ```{bash}
-#| eval: false
 echo 'hello, world' > test1.txt
 ```
 and
 ```{bash}
-#| eval: false
 echo 'hello, world' >> test2.txt
 ```
 
@@ -270,7 +248,6 @@ Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this sh
 
 **Answer:**
 ```{bash}
-#| eval: false
 chmod +x middle.sh
 ./middle.sh pg42671.txt 20 5
 ```
@@ -283,7 +260,6 @@ Try following commands in Bash and interpret the results: `cal`, `cal 2024`, `ca
 
 **Answer:**
 ```{bash}
-#| eval: false
 printf "cal:\n"
 cal
 printf "cal 2024:\n"
@@ -293,79 +269,66 @@ cal 9 1752
 ```
 
 ```{bash}
-#| eval: false
 printf "date:\n"
 date
 ```
 
 ```{bash}
-#| eval: false
 printf "hostname:\n"
 hostname
 ```
 
 ```{bash}
-#| eval: false
 printf "arch:\n"
 arch
 ```
 
 ```{bash}
-#| eval: false
 printf "uname -a:\n"
 uname -a
 ```
 
 ```{bash}
-#| eval: false
 printf "uptime:\n"
 uptime
 ```
 
 ```{bash}
-#| eval: false
 printf "who am i:\n"
 who am i
 ```
 
 ```{bash}
-#| eval: false
 printf "who:\n"
 who
 ```
 
 ```{bash}
-#| eval: false
 printf "w:\n"
 w
 ```
 
 ```{bash}
-#| eval: false
 printf "id:\n"
 id
 ```
 
 ```{bash}
-#| eval: false
 printf "last | head:\n"
 last | head
 ```
 
 ```{bash}
-#| eval: false
 printf "echo {con,pre}{sent,fer}{s,ed}:\n"
 echo {con,pre}{sent,fer}{s,ed}
 ```
 
 ```{bash}
-#| eval: false
 printf "time sleep 5:\n"
 time sleep 5
 ```
 
 ```{bash}
-#| eval: false
 printf "history | tail:\n"
 history | tail
 ```
