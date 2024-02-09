@@ -144,7 +144,7 @@ The run time changed, and it became faster. Also, the memory usage is the same a
 ## Q2. Ingest big data files
 
 <p align="center">
-  <img src="./bigfile.png" width="50%">
+  <img src="https://raw.githubusercontent.com/ucla-biostat-203b/2024winter/main/hw/hw2/bigfile.png" width="50%">
 </p>
 
 Let us focus on a bigger file, `labevents.csv.gz`, which is about 125x bigger than `admissions.csv.gz`.
@@ -159,7 +159,7 @@ zcat < ~/mimic/hosp/labevents.csv.gz | tail -n +2 | head -10
 ### Q2.1 Ingest `labevents.csv.gz` by `read_csv`
 
 <p align="center">
-  <img src="./readr_logo.png" width="20%">
+  <img src="https://raw.githubusercontent.com/ucla-biostat-203b/2024winter/main/hw/hw2/readr_logo.png" width="20%">
 </p>
 
 Try to ingest `labevents.csv.gz` using `read_csv`. What happens? If it takes more than 5 minutes on your computer, then abort the program and report your findings. 
@@ -185,7 +185,7 @@ It partly solved the issue. The run time (elapsed time 318.679) is much faster t
 ### Q2.3 Ingest subset of `labevents.csv.gz`
 
 <p align="center">
-  <img src="./linux_logo.png" width="20%">
+  <img src="https://raw.githubusercontent.com/ucla-biostat-203b/2024winter/main/hw/hw2/linux_logo.png" width="20%">
 </p>
 
 Our first strategy to handle this big data file is to make a subset of the `labevents` data.  Read the [MIMIC documentation](https://mimic.mit.edu/docs/iv/modules/hosp/labevents/) for the content in data file `labevents.csv`.
@@ -223,7 +223,7 @@ There are 24855909 lines in the filtered file. The elapsed time is approximate 6
 ### Q2.4 Ingest `labevents.csv` by Apache Arrow
 
 <p align="center">
-  <img src="./arrow_logo.png" width="30%">
+  <img src="https://raw.githubusercontent.com/ucla-biostat-203b/2024winter/main/hw/hw2/arrow_logo.png" width="30%">
 </p>
 
 Our second strategy is to use [Apache Arrow](https://arrow.apache.org/) for larger-than-memory data analytics. Unfortunately Arrow does not work with gz files directly. First decompress `labevents.csv.gz` to `labevents.csv` and put it in the current working directory. To save render time, put `#| eval: false` at the beginning of this code chunk.
@@ -265,7 +265,7 @@ Apache Arrow is a platform to transform data among various database or language 
 ### Q2.5 Compress `labevents.csv` to Parquet format and ingest/select/filter
 
 <p align="center">
-  <img src="./parquet_logo.png" width="30%">
+  <img src="https://raw.githubusercontent.com/ucla-biostat-203b/2024winter/main/hw/hw2/parquet_logo.png" width="30%">
 </p>
 
 Re-write the csv file `labevents.csv` in the binary Parquet format (Hint: [`arrow::write_dataset`](https://arrow.apache.org/docs/r/reference/write_dataset.html).) How large is the Parquet file(s)? How long does the ingest+select+filter process of the Parquet file(s) take? Display the number of rows and the first 10 rows of the result tibble and make sure they match those in Q2.3. (Hint: use `dplyr` verbs for selecting columns and filtering rows.)
@@ -307,7 +307,7 @@ Parquet is a data file format to store and retrieve data in an efficient way usi
 ### Q2.6 DuckDB
 
 <p align="center">
-  <img src="./duckdb_logo.png" width="20%">
+  <img src="https://raw.githubusercontent.com/ucla-biostat-203b/2024winter/main/hw/hw2/duckdb_logo.png" width="20%">
 </p>
 
 Ingest the Parquet file, convert it to a DuckDB table by [`arrow::to_duckdb`](https://arrow.apache.org/docs/r/reference/to_duckdb.html), select columns, and filter rows as in Q2.5. How long does the ingest+convert+select+filter process take? Display the number of rows and the first 10 rows of the result tibble and make sure they match those in Q2.3. (Hint: use `dplyr` verbs for selecting columns and filtering rows.)
