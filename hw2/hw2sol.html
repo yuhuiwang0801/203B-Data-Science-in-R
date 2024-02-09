@@ -3112,7 +3112,7 @@ loaded via a namespace (and not attached):
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>memuse<span class="sc">::</span><span class="fu">Sys.meminfo</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Totalram:    8.000 GiB 
-Freeram:   254.734 MiB </code></pre>
+Freeram:   133.312 MiB </code></pre>
 </div>
 </div>
 <p>In this exercise, we explore various tools for ingesting the <a href="https://mimic.mit.edu/docs/iv/">MIMIC-IV</a> data introduced in <a href="https://ucla-biostat-203b.github.io/2024winter/hw/hw1/hw1.html">homework 1</a>.</p>
@@ -3171,21 +3171,21 @@ Freeram:   254.734 MiB </code></pre>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">read.csv</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  3.763   0.219   4.318 </code></pre>
+  3.774   0.260   4.438 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">read_csv</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  1.023   0.151   0.818 </code></pre>
+  0.944   0.138   0.744 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">fread</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.359   0.048   0.449 </code></pre>
+  0.349   0.063   0.474 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3305,7 +3305,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">read_csv</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>, <span class="at">col_types =</span> col_types))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.927   0.102   0.632 </code></pre>
+  0.857   0.115   0.617 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3436,7 +3436,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">read_csv</span>(<span class="st">&quot;labevents_filtered.csv.gz&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  9.418   1.420   6.100 </code></pre>
+  8.497   1.797   6.209 </code></pre>
 </div>
 </div>
 <p>There are 24855909 lines in the filtered file. The elapsed time is approximate 6 - 8 seconds.</p>
@@ -3462,7 +3462,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.051   0.007   0.068 </code></pre>
+  0.049   0.015   0.114 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3492,7 +3492,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 10   10000032  51301 2180-05-06 15:25:00      5  </code></pre>
 </div>
 </div>
-<p>Results are the same as Q2.3.</p>
+<p>Results are the same as Q2.3, except charttime. The difference of charttime is due to the different tiem zone between my computer and the default time zone, and there is a 8 hours gap between them. Therefore, we can consider the results are the same.</p>
 <p>Apache Arrow is a platform to transform data among various database or language data formats using its in-memory columnar format. It is like a bridge between different data formats, and It can lower the time cost as much as possible.</p>
 </section>
 <section id="q2.5-compress-labevents.csv-to-parquet-format-and-ingestselectfilter" class="level3">
@@ -3521,7 +3521,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.149   0.015   0.184 </code></pre>
+  0.150   0.018   0.190 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3551,7 +3551,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 10   10000032  51301 2180-05-06 15:25:00      5  </code></pre>
 </div>
 </div>
-<p>The Parquet file is 136 bytes. The elapsed time of the process is 0.151 seconds. The number of rows and the first 10 rows of the result tibble are the same as Q2.3.</p>
+<p>The Parquet file is 136 bytes. The elapsed time of the process is 0.151 seconds. The number of rows and the first 10 rows of the result tibble are the same as Q2.3 except charttime. The difference reason is the same as Q2.4.</p>
 <p>Parquet is a data file format to store and retrieve data in an efficient way using column-oriented method. It is like a data warehouse, and it can lower the time cost and file size as much as possible.</p>
 </section>
 <section id="q2.6-duckdb" class="level3">
@@ -3576,7 +3576,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  6.154   2.198   7.215 </code></pre>
+  6.149   2.622   7.742 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">

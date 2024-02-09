@@ -258,7 +258,7 @@ labevents_filtered %>%
   collect() %>% 
   head(10)
 ```
-Results are the same as Q2.3.
+Results are the same as Q2.3, except charttime. The difference of charttime is due to the different tiem zone between my computer and the default time zone, and there is a 8 hours gap between them. Therefore, we can consider the results are the same.
 
 Apache Arrow is a platform to transform data among various database or language data formats using its in-memory columnar format. It is like a bridge between different data formats, and  It can lower the time cost as much as possible.
 
@@ -301,7 +301,7 @@ labevents_parquet_filtered %>%
   collect() %>% 
   head(10)
 ```
-The Parquet file is 136 bytes. The elapsed time of the process is 0.151 seconds. The number of rows and the first 10 rows of the result tibble are the same as Q2.3.
+The Parquet file is 136 bytes. The elapsed time of the process is 0.151 seconds. The number of rows and the first 10 rows of the result tibble are the same as Q2.3 except charttime. The difference reason is the same as Q2.4.
 
 Parquet is a data file format to store and retrieve data in an efficient way using column-oriented method. It is like a data warehouse, and it can lower the time cost and file size as much as possible.
 
