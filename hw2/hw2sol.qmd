@@ -359,6 +359,7 @@ In later exercises, we are interested in the vitals for ICU patients: heart rate
 
 Document the steps and show code. Display the number of rows and the first 10 rows of the result tibble.
 
+
 **Answer:**
 I would like to use Apache Arrow combined with Parquet to ingest and filter the data.
 Decompress the file:

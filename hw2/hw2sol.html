@@ -3112,7 +3112,7 @@ loaded via a namespace (and not attached):
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>memuse<span class="sc">::</span><span class="fu">Sys.meminfo</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Totalram:    8.000 GiB 
-Freeram:   133.375 MiB </code></pre>
+Freeram:   106.000 MiB </code></pre>
 </div>
 </div>
 <p>In this exercise, we explore various tools for ingesting the <a href="https://mimic.mit.edu/docs/iv/">MIMIC-IV</a> data introduced in <a href="https://ucla-biostat-203b.github.io/2024winter/hw/hw1/hw1.html">homework 1</a>.</p>
@@ -3171,21 +3171,21 @@ Freeram:   133.375 MiB </code></pre>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">read.csv</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  3.665   0.194   4.120 </code></pre>
+  3.678   0.195   4.138 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">read_csv</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.974   0.131   0.760 </code></pre>
+  0.953   0.119   0.704 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">fread</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.353   0.052   0.461 </code></pre>
+  0.351   0.046   0.431 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3305,7 +3305,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">read_csv</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>, <span class="at">col_types =</span> col_types))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.920   0.099   0.617 </code></pre>
+  0.862   0.096   0.584 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3436,7 +3436,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">read_csv</span>(<span class="st">&quot;labevents_filtered.csv.gz&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  9.085   1.543  10.371 </code></pre>
+  8.732   1.489   6.058 </code></pre>
 </div>
 </div>
 <p>There are 24855909 lines in the filtered file. The elapsed time is approximate 6 - 8 seconds.</p>
@@ -3462,7 +3462,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.048   0.014   0.094 </code></pre>
+  0.049   0.011   0.085 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3521,7 +3521,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.147   0.021   0.197 </code></pre>
+  0.147   0.019   0.185 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3576,7 +3576,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  6.086   2.464   7.439 </code></pre>
+  6.215   2.445   7.799 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3680,16 +3680,16 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <pre><code># A tibble: 10 × 11
    subject_id  hadm_id  stay_id caregiver_id charttime          
         &lt;int&gt;    &lt;int&gt;    &lt;int&gt;        &lt;int&gt; &lt;dttm&gt;             
- 1   10001884 26184834 37510196        46969 2131-01-12 12:01:00
- 2   10001884 26184834 37510196        46969 2131-01-12 12:01:00
- 3   10001884 26184834 37510196        46969 2131-01-12 13:00:00
- 4   10001884 26184834 37510196        46969 2131-01-12 13:00:00
- 5   10001884 26184834 37510196        46969 2131-01-12 13:01:00
- 6   10001884 26184834 37510196        46969 2131-01-12 13:01:00
- 7   10001884 26184834 37510196        46969 2131-01-12 14:00:00
- 8   10001884 26184834 37510196        46969 2131-01-12 14:00:00
- 9   10001884 26184834 37510196        46969 2131-01-12 14:01:00
-10   10001884 26184834 37510196        46969 2131-01-12 14:01:00
+ 1   10000032 29079034 39553978        47007 2180-07-23 14:01:00
+ 2   10000032 29079034 39553978        47007 2180-07-23 14:01:00
+ 3   10000032 29079034 39553978        47007 2180-07-23 15:00:00
+ 4   10000032 29079034 39553978        47007 2180-07-23 15:00:00
+ 5   10000032 29079034 39553978        47007 2180-07-23 15:00:00
+ 6   10000032 29079034 39553978        47007 2180-07-23 15:00:00
+ 7   10000032 29079034 39553978        66056 2180-07-23 12:00:00
+ 8   10000032 29079034 39553978        66056 2180-07-23 12:00:00
+ 9   10000032 29079034 39553978        66056 2180-07-23 12:00:00
+10   10000032 29079034 39553978        66056 2180-07-23 12:00:00
 # ℹ 6 more variables: storetime &lt;dttm&gt;, itemid &lt;int&gt;, value &lt;chr&gt;,
 #   valuenum &lt;dbl&gt;, valueuom &lt;chr&gt;, warning &lt;int&gt;</code></pre>
 </div>
