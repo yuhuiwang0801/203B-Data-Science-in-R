@@ -156,6 +156,7 @@ Display the first 10 lines of this file.
 zcat < ~/mimic/hosp/labevents.csv.gz | tail -n +2 | head -10
 ```
 
+
 ### Q2.1 Ingest `labevents.csv.gz` by `read_csv`
 
 <p align="center">
