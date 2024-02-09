@@ -99,7 +99,7 @@ read_csv("~/mimic/hosp/admissions.csv.gz") %>% glimpse()
 ```{r}
 fread("~/mimic/hosp/admissions.csv.gz") %>% glimpse()
 ```
-Fread is the fastest, and read.csv is the slowest. The default parsed data types are different, as different functions use different default data types showed above.
+`fread` is the fastest, and `read.csv` is the slowest. The default parsed data types are different, as different functions use different default data types showed above.
 The resultant dataframe or tibble use different memory usage. In particular, `fread` uses 50.13 MB, `read_csv` uses 55.31 MB, and `read.csv` uses 158.71 MB.
 
 ### Q1.2 User-supplied data types
@@ -139,7 +139,7 @@ object_size(read_csv("~/mimic/hosp/admissions.csv.gz", col_types = col_types))
 ```{r}
 read_csv("~/mimic/hosp/admissions.csv.gz", col_type = col_types) %>% glimpse()
 ```
-The run time changed, and it becomes faster. However, the memory usage is the same as the default data types.
+The run time changed, and it became faster. Also, the memory usage is the same as `fread` method, which is 50.13 MB, meaning that the memory usage is actually based on the data types.
 
 ## Q2. Ingest big data files
 
@@ -153,7 +153,7 @@ ls -l ~/mimic/hosp/labevents.csv.gz
 ```
 Display the first 10 lines of this file.
 ```{bash}
-zcat < ~/mimic/hosp/labevents.csv.gz | head -10
+zcat < ~/mimic/hosp/labevents.csv.gz | tail -n +2 | head -10
 ```
 
 ### Q2.1 Ingest `labevents.csv.gz` by `read_csv`
@@ -195,6 +195,7 @@ In later exercises, we will only be interested in the following lab items: creat
 Display the first 10 lines of the new file `labevents_filtered.csv.gz`. How many lines are in this new file? How long does it take `read_csv` to ingest `labevents_filtered.csv.gz`?
 
 **Answer:**
+See the headers and data format of the file:
 ```{bash}
 zcat < ~/mimic/hosp/labevents.csv.gz | head -3
 ```
@@ -203,6 +204,7 @@ zcat < ~/mimic/hosp/labevents.csv.gz | head -3
 #| eval: false
 zcat < ~/mimic/hosp/labevents.csv.gz | awk -F, 'BEGIN{OFS=","} {if ($5 == 50912 || $5 == 50971 || $5 == 50983 || $5 == 50902 || $5 == 50882 || $5 == 51221 || $5 == 51301 || $5 == 50931) print $2,$5,$7,$10}' | gzip > labevents_filtered.csv.gz
 ```
+
 First 10 lines display:
 ```{bash}
 zcat < labevents_filtered.csv.gz | head -10
@@ -340,7 +342,7 @@ labevents_duckdb_filtered %>%
 ```
 The process took elapsed time of 4 - 6 seconds. The number of rows and the first 10 rows are the same as Q2.3.
 
-DuckDB is basically a online analytical processing database. It leverages Structured Query Language (SQL) to analyze data fastly.
+DuckDB is basically an online analytical processing database. It leverages Structured Query Language (SQL) to analyze data fastly.
 
 
 ## Q3. Ingest and filter `chartevents.csv.gz`

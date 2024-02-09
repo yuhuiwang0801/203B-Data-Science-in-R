@@ -3111,8 +3111,8 @@ loaded via a namespace (and not attached):
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>memuse<span class="sc">::</span><span class="fu">Sys.meminfo</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Totalram:   8.000 GiB 
-Freeram:   79.266 MiB </code></pre>
+<pre><code>Totalram:    8.000 GiB 
+Freeram:   133.375 MiB </code></pre>
 </div>
 </div>
 <p>In this exercise, we explore various tools for ingesting the <a href="https://mimic.mit.edu/docs/iv/">MIMIC-IV</a> data introduced in <a href="https://ucla-biostat-203b.github.io/2024winter/hw/hw1/hw1.html">homework 1</a>.</p>
@@ -3171,21 +3171,21 @@ Freeram:   79.266 MiB </code></pre>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">read.csv</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  3.738   0.196   4.194 </code></pre>
+  3.665   0.194   4.120 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">read_csv</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.922   0.115   0.697 </code></pre>
+  0.974   0.131   0.760 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">fread</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.352   0.042   0.428 </code></pre>
+  0.353   0.052   0.461 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3275,7 +3275,7 @@ $ edouttime            &lt;dttm&gt; 2180-05-06 23:30:00, 2180-06-26 21:31:00, 21
 $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…</code></pre>
 </div>
 </div>
-<p>Fread is the fastest, and read.csv is the slowest. The default parsed data types are different, as different functions use different default data types showed above. The resultant dataframe or tibble use different memory usage. In particular, <code>fread</code> uses 50.13 MB, <code>read_csv</code> uses 55.31 MB, and <code>read.csv</code> uses 158.71 MB.</p>
+<p><code>fread</code> is the fastest, and <code>read.csv</code> is the slowest. The default parsed data types are different, as different functions use different default data types showed above. The resultant dataframe or tibble use different memory usage. In particular, <code>fread</code> uses 50.13 MB, <code>read_csv</code> uses 55.31 MB, and <code>read.csv</code> uses 158.71 MB.</p>
 </section>
 <section id="q1.2-user-supplied-data-types" class="level3">
 <h3 class="anchored" data-anchor-id="q1.2-user-supplied-data-types">Q1.2 User-supplied data types</h3>
@@ -3305,7 +3305,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">read_csv</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>, <span class="at">col_types =</span> col_types))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.838   0.106   0.621 </code></pre>
+  0.920   0.099   0.617 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3337,7 +3337,7 @@ $ edouttime            &lt;dttm&gt; 2180-05-06 23:30:00, 2180-06-26 21:31:00, 21
 $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…</code></pre>
 </div>
 </div>
-<p>The run time changed, and it becomes faster. However, the memory usage is the same as the default data types.</p>
+<p>The run time changed, and it became faster. Also, the memory usage is the same as <code>fread</code> method, which is 50.13 MB, meaning that the memory usage is actually based on the data types.</p>
 </section>
 </section>
 <section id="q2.-ingest-big-data-files" class="level2">
@@ -3354,10 +3354,9 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 </div>
 <p>Display the first 10 lines of this file.</p>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> <span class="op">&lt;</span> ~/mimic/hosp/labevents.csv.gz <span class="kw">|</span> <span class="fu">head</span> <span class="at">-10</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> <span class="op">&lt;</span> ~/mimic/hosp/labevents.csv.gz <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-n</span> +2 <span class="kw">|</span> <span class="fu">head</span> <span class="at">-10</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>labevent_id,subject_id,hadm_id,specimen_id,itemid,order_provider_id,charttime,storetime,value,valuenum,valueuom,ref_range_lower,ref_range_upper,flag,priority,comments
-1,10000032,,45421181,51237,P28Z0X,2180-03-23 11:51:00,2180-03-23 15:15:00,1.4,1.4,,0.9,1.1,abnormal,ROUTINE,
+<pre><code>1,10000032,,45421181,51237,P28Z0X,2180-03-23 11:51:00,2180-03-23 15:15:00,1.4,1.4,,0.9,1.1,abnormal,ROUTINE,
 2,10000032,,45421181,51274,P28Z0X,2180-03-23 11:51:00,2180-03-23 15:15:00,___,15.1,sec,9.4,12.5,abnormal,ROUTINE,VERIFIED.
 3,10000032,,52958335,50853,P28Z0X,2180-03-23 11:51:00,2180-03-25 11:06:00,___,15,ng/mL,30,60,abnormal,ROUTINE,NEW ASSAY IN USE ___: DETECTS D2 AND D3 25-OH ACCURATELY.
 4,10000032,,52958335,50861,P28Z0X,2180-03-23 11:51:00,2180-03-23 16:40:00,102,102,IU/L,0,40,abnormal,ROUTINE,
@@ -3365,7 +3364,8 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 6,10000032,,52958335,50863,P28Z0X,2180-03-23 11:51:00,2180-03-23 16:40:00,109,109,IU/L,35,105,abnormal,ROUTINE,
 7,10000032,,52958335,50864,P28Z0X,2180-03-23 11:51:00,2180-03-23 16:40:00,___,8,ng/mL,0,8.7,,ROUTINE,MEASURED BY ___.
 8,10000032,,52958335,50868,P28Z0X,2180-03-23 11:51:00,2180-03-23 16:40:00,12,12,mEq/L,8,20,,ROUTINE,
-9,10000032,,52958335,50878,P28Z0X,2180-03-23 11:51:00,2180-03-23 16:40:00,143,143,IU/L,0,40,abnormal,ROUTINE,</code></pre>
+9,10000032,,52958335,50878,P28Z0X,2180-03-23 11:51:00,2180-03-23 16:40:00,143,143,IU/L,0,40,abnormal,ROUTINE,
+10,10000032,,52958335,50882,P28Z0X,2180-03-23 11:51:00,2180-03-23 16:40:00,27,27,mEq/L,22,32,,ROUTINE,</code></pre>
 </div>
 </div>
 <section id="q2.1-ingest-labevents.csv.gz-by-read_csv" class="level3">
@@ -3397,7 +3397,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <p>Our first strategy to handle this big data file is to make a subset of the <code>labevents</code> data. Read the <a href="https://mimic.mit.edu/docs/iv/modules/hosp/labevents/">MIMIC documentation</a> for the content in data file <code>labevents.csv</code>.</p>
 <p>In later exercises, we will only be interested in the following lab items: creatinine (50912), potassium (50971), sodium (50983), chloride (50902), bicarbonate (50882), hematocrit (51221), white blood cell count (51301), and glucose (50931) and the following columns: <code>subject_id</code>, <code>itemid</code>, <code>charttime</code>, <code>valuenum</code>. Write a Bash command to extract these columns and rows from <code>labevents.csv.gz</code> and save the result to a new file <code>labevents_filtered.csv.gz</code> in the current working directory. (Hint: use <code>zcat &lt;</code> to pipe the output of <code>labevents.csv.gz</code> to <code>awk</code> and then to <code>gzip</code> to compress the output. To save render time, put <code>#| eval: false</code> at the beginning of this code chunk.)</p>
 <p>Display the first 10 lines of the new file <code>labevents_filtered.csv.gz</code>. How many lines are in this new file? How long does it take <code>read_csv</code> to ingest <code>labevents_filtered.csv.gz</code>?</p>
-<p><strong>Answer:</strong></p>
+<p><strong>Answer:</strong> See the headers and data format of the file:</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb41"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> <span class="op">&lt;</span> ~/mimic/hosp/labevents.csv.gz <span class="kw">|</span> <span class="fu">head</span> <span class="at">-3</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -3436,7 +3436,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">read_csv</span>(<span class="st">&quot;labevents_filtered.csv.gz&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  8.681   1.326   5.471 </code></pre>
+  9.085   1.543  10.371 </code></pre>
 </div>
 </div>
 <p>There are 24855909 lines in the filtered file. The elapsed time is approximate 6 - 8 seconds.</p>
@@ -3462,7 +3462,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.045   0.012   0.088 </code></pre>
+  0.048   0.014   0.094 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3521,7 +3521,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.146   0.018   0.185 </code></pre>
+  0.147   0.021   0.197 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3576,7 +3576,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  6.064   2.315   7.409 </code></pre>
+  6.086   2.464   7.439 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3607,7 +3607,7 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 </div>
 </div>
 <p>The process took elapsed time of 4 - 6 seconds. The number of rows and the first 10 rows are the same as Q2.3.</p>
-<p>DuckDB is basically a online analytical processing database. It leverages Structured Query Language (SQL) to analyze data fastly.</p>
+<p>DuckDB is basically an online analytical processing database. It leverages Structured Query Language (SQL) to analyze data fastly.</p>
 </section>
 </section>
 <section id="q3.-ingest-and-filter-chartevents.csv.gz" class="level2">
@@ -3680,16 +3680,16 @@ $ hospital_expire_flag &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 <pre><code># A tibble: 10 × 11
    subject_id  hadm_id  stay_id caregiver_id charttime          
         &lt;int&gt;    &lt;int&gt;    &lt;int&gt;        &lt;int&gt; &lt;dttm&gt;             
- 1   10002428 23473524 35479615        13065 2156-05-16 10:00:00
- 2   10002428 23473524 35479615        13065 2156-05-16 10:00:00
- 3   10002428 23473524 35479615        13065 2156-05-16 10:00:00
- 4   10002428 23473524 35479615        13065 2156-05-16 10:00:00
- 5   10002428 23473524 35479615        13065 2156-05-16 11:00:00
- 6   10002428 23473524 35479615        13065 2156-05-16 11:00:00
- 7   10002428 23473524 35479615        13065 2156-05-16 11:00:00
- 8   10002428 23473524 35479615        13065 2156-05-16 11:00:00
- 9   10002428 23473524 35479615        13065 2156-05-16 12:00:00
-10   10002428 23473524 35479615        13065 2156-05-16 12:00:00
+ 1   10001884 26184834 37510196        46969 2131-01-12 12:01:00
+ 2   10001884 26184834 37510196        46969 2131-01-12 12:01:00
+ 3   10001884 26184834 37510196        46969 2131-01-12 13:00:00
+ 4   10001884 26184834 37510196        46969 2131-01-12 13:00:00
+ 5   10001884 26184834 37510196        46969 2131-01-12 13:01:00
+ 6   10001884 26184834 37510196        46969 2131-01-12 13:01:00
+ 7   10001884 26184834 37510196        46969 2131-01-12 14:00:00
+ 8   10001884 26184834 37510196        46969 2131-01-12 14:00:00
+ 9   10001884 26184834 37510196        46969 2131-01-12 14:01:00
+10   10001884 26184834 37510196        46969 2131-01-12 14:01:00
 # ℹ 6 more variables: storetime &lt;dttm&gt;, itemid &lt;int&gt;, value &lt;chr&gt;,
 #   valuenum &lt;dbl&gt;, valueuom &lt;chr&gt;, warning &lt;int&gt;</code></pre>
 </div>
