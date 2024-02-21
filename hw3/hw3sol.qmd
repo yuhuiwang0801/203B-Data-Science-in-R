@@ -235,6 +235,13 @@ zcat < ~/mimic/hosp/admissions.csv.gz | head
 
 Import `admissions.csv.gz` as a tibble `admissions_tble`.
 
+**Answer:**
+
+```{r}
+admissions_tble <- read_csv("~/mimic/hosp/admissions.csv.gz")
+admissions_tble
+```
+
 ### Q3.2 Summary and visualization
 
 Summarize the following information by graphics and explain any patterns you see.
@@ -247,6 +254,64 @@ Summarize the following information by graphics and explain any patterns you see
 According to the [MIMIC-IV documentation](https://mimic.mit.edu/docs/iv/about/concepts/#date-shifting),
 
 > All dates in the database have been shifted to protect patient confidentiality. Dates will be internally consistent for the same patient, but randomly distributed in the future. Dates of birth which occur in the present time are not true dates of birth. Furthermore, dates of birth which occur before the year 1900 occur if the patient is older than 89. In these cases, the patient's age at their first admission has been fixed to 300.
+
+**Answer:**
+number of admissions per patient
+```{r}
+admissions_tble %>%
+  count(subject_id, name = "admissions") %>%
+  ggplot(aes(x = admissions)) +
+  geom_bar() +
+  labs(
+    x = "Number of admissions",
+    y = "Number of patients",
+    title = "Number of admissions per patient distribution"
+  ) +
+  scale_x_continuous(limits = c(0, 50))
+```
+Most patients have only one admission, and number of patients will decrease along with increase of number of admissions.
+
+admission hour (anything unusual?)
+```{r}
+admissions_tble %>%
+  ggplot(aes(x = hour(admittime))) +
+  geom_bar() +
+  labs(
+    x = "Admission hour",
+    y = "Number of admissions",
+    title = "Admission hour distribution"
+  )
+```
+Most admissions occur from 14 to 24, and the number of admissions is relatively low from 0 to 13. However, from 0 to 13, there is a significant high admissions at 7, which is the wake-up time for most people.
+
+admission minute (anything unusual?)
+```{r}
+admissions_tble %>%
+  ggplot(aes(x = minute(admittime))) +
+  geom_bar() +
+  labs(
+    x = "Admission minute",
+    y = "Number of admissions",
+    title = "Admission minute distribution"
+  )
+```
+There are significant high admissions occurring at minute 0, minute 15, minute 30, and minute 45, along with a decreasing trend, which is consistent with the practice of rounding time to the nearest quarter hour.
+
+length of hospital stay (from admission to discharge) (anything unusual?)
+```{r}
+admissions_tble %>%
+  mutate(length_of_stay = as.numeric(dischtime - admittime, units = "days")) %>%
+  ggplot(aes(x = length_of_stay)) +
+  geom_histogram() +
+  labs(
+    x = "Length of stay",
+    y = "Number of admissions",
+    title = "Length of stay distribution"
+  ) +
+  scale_x_continuous(limits = c(0, 50))
+```
+Most patients stay in hospital for less than 5 days, and the number of admissions will decrease rapidly along with the increase of length of stay.
+
 
 ## Q4. `patients` data
 
