@@ -69,10 +69,27 @@ sid_adt <- read_csv("~/mimic/hosp/transfers.csv.gz") |>
   filter(subject_id == sid) |>
   print(width = Inf)
 ```
+Import `labevents.csv.gz` as a tibble `labevents_tbl`:
+```{r eval=FALSE}
+original_path <- "~/Desktop/203b-homework/hw2/labevents.parquet"
+link_path <- "~/Desktop/203b-homework/hw3/labevents.parquet"
+system(paste("ln -s", original_path, link_path))
+```
+
+```{r}
+sid_lab <- arrow::open_dataset("labevents.parquet") |>
+  filter(subject_id == sid) |>
+  print(width = Inf)
+
+sid_lab <- sid_lab %>%
+  collect()
+
+sid_lab
+```
 
 Plotting
 ```{r}
-sid_adt %>%
+adt_plot <- sid_adt %>%
   filter(eventtype != "discharge") %>%
   ggplot() +
   geom_segment(aes(
@@ -81,14 +98,74 @@ sid_adt %>%
     y = "ADT", 
     yend = "ADT", 
     color = careunit, 
-    linewidth = str_detect(careunit, "(ICU|CCU)"))
+    linewidth = str_detect(careunit, "(ICU|CCU)"),
+    size = 1)
     ) +
+
+  labs(
+    x = "",
+    y = "",
+    title = str_c("Patient ", sid, " ADT history")
+  ) 
+adt_plot
+```
+
+```{r}
+lab_plot <- sid_lab %>%
+  ggplot() +
+  geom_segment(aes(
+    x = charttime, 
+    xend = storetime, 
+    y = "Lab", 
+    yend = "Lab", 
+    color = "black")
+    ) +
+  geom_point(aes(x = charttime, y = "Lab"), shape = 3)
+lab_plot
+```
+
+```{r}
+sid_adt <- read_csv("~/mimic/hosp/procedures_icd") |>
+  filter(subject_id == sid) |>
+  print(width = Inf)
+```
+```{bash}
+zcat < ~/mimic/hosp/procedures_icd.csv.gz | head
+```
+
+```{r}
+```
+
+```{r}
+combined_plot <- ggplot() +
+  geom_segment(data = sid_adt %>%
+                 filter(eventtype != "discharge"),
+               aes(
+                 x = intime, 
+                 xend = outtime, 
+                 y = "ADT", 
+                 yend = "ADT", 
+                 color = careunit, 
+                 linewidth = str_detect(careunit, "(ICU|CCU)"))
+  ) +
+  geom_segment(data = sid_lab,
+               aes(
+                 x = charttime, 
+                 xend = storetime, 
+                 y = "Lab", 
+                 yend = "Lab", 
+                 color = "black")
+  ) +
+  geom_point(data = sid_lab, aes(x = charttime, y = "Lab"), shape = 3) +
   labs(
     x = "",
     y = "",
     title = str_c("Patient ", sid, " ADT history")
   )
+combined_plot
 ```
+
+
 
 ### Q1.2 ICU stays
 
@@ -112,9 +189,39 @@ zcat < ~/mimic/icu/icustays.csv.gz | head
 
 Import `icustays.csv.gz` as a tibble `icustays_tble`.
 
+**Answer:**
+
+```{r}
+icustays_tble <- read_csv("~/mimic/icu/icustays.csv.gz")
+icustays_tble
+```
+
+
 ### Q2.2 Summary and visualization
 
 How many unique `subject_id`? Can a `subject_id` have multiple ICU stays? Summarize the number of ICU stays per `subject_id` by graphs.
+
+**Answer:**
+
+```{r}
+icustays_tble %>%
+  count(subject_id) %>%
+  count()
+```
+There are 50920 unique `subject_id`. Also, a `subject_id` can have multiple ICU stays.
+
+```{r}
+icustays_tble %>%
+  count(subject_id, name = "icu_stays") %>%
+  ggplot(aes(x = icu_stays)) +
+  geom_bar() +
+  labs(
+    x = "Number of ICU stays",
+    y = "Number of patients",
+    title = "Number of ICU stays per patient distribution"
+  )
+```
+
 
 ## Q3. `admissions` data
 
