@@ -63,11 +63,21 @@ Interested patients:
 sid <- 10001217
 ```
 
-Import `transfers.csv.gz` as a tibble `transfers_tbl`:
+Import `transfers.csv.gz`:
 ```{r}
 sid_adt <- read_csv("~/mimic/hosp/transfers.csv.gz") |>
   filter(subject_id == sid) |>
   print(width = Inf)
+
+sid_adt <- sid_adt %>%
+  mutate(
+    intime = as.POSIXct(intime, tz = "UTC"),
+    outtime = as.POSIXct(outtime, tz = "UTC")
+  ) %>%
+  filter(eventtype != "discharge") %>%
+  collect()
+
+sid_adt
 ```
 Import `labevents.csv.gz` as a tibble `labevents_tbl`:
 ```{r eval=FALSE}
@@ -82,87 +92,107 @@ sid_lab <- arrow::open_dataset("labevents.parquet") |>
   print(width = Inf)
 
 sid_lab <- sid_lab %>%
-  collect()
+  collect() %>%
+  mutate(
+    charttime = as.POSIXct(charttime, tz = "UTC"),
+    storetime = as.POSIXct(storetime, tz = "UTC")
+  ) 
 
 sid_lab
 ```
 
-Plotting
-```{r}
-adt_plot <- sid_adt %>%
-  filter(eventtype != "discharge") %>%
-  ggplot() +
-  geom_segment(aes(
-    x = intime, 
-    xend = outtime, 
-    y = "ADT", 
-    yend = "ADT", 
-    color = careunit, 
-    linewidth = str_detect(careunit, "(ICU|CCU)"),
-    size = 1)
-    ) +
-
-  labs(
-    x = "",
-    y = "",
-    title = str_c("Patient ", sid, " ADT history")
-  ) 
-adt_plot
-```
 
 ```{r}
-lab_plot <- sid_lab %>%
-  ggplot() +
-  geom_segment(aes(
-    x = charttime, 
-    xend = storetime, 
-    y = "Lab", 
-    yend = "Lab", 
-    color = "black")
-    ) +
-  geom_point(aes(x = charttime, y = "Lab"), shape = 3)
-lab_plot
-```
-
-```{r}
-sid_adt <- read_csv("~/mimic/hosp/procedures_icd") |>
+sid_procedure <- read_csv("~/mimic/hosp/procedures_icd.csv.gz") |>
   filter(subject_id == sid) |>
   print(width = Inf)
+
+sid_procedure <- sid_procedure %>%
+  mutate(
+    chartdate = as.POSIXct(chartdate, tz = "UTC")
+  ) 
+sid_procedure
 ```
-```{bash}
-zcat < ~/mimic/hosp/procedures_icd.csv.gz | head
+```{r}
+procedure <- read_csv("~/mimic/hosp/d_icd_procedures.csv.gz") |>
+  print(width = Inf)
+
+sid_procedure <- sid_procedure |>
+  left_join(procedure, by = "icd_code") |>
+  print(width = Inf)
+```
+```{r}
+sid_diagnosis <- read_csv("~/mimic/hosp/diagnoses_icd.csv.gz") |>
+  filter(subject_id == sid) |>
+  print(width = Inf)
+
+sid_d <- read_csv("~/mimic/hosp/d_icd_diagnoses.csv.gz") |>
+  print(width = Inf)
+
+sid_diagnosis <- sid_diagnosis |>
+  left_join(sid_d, by = "icd_code") |>
+  print(width = Inf)
+
+top_three <- sid_diagnosis |>
+  slice(1:3) 
+
+top_three <- top_three$long_title
+top_three
+```
+
+
+
+
+```{r}
+patient <- read_csv("~/mimic/hosp/patients.csv.gz") |>
+  filter(subject_id == sid) |>
+  print(width = Inf)
+gender <- patient$gender
+age <- patient$anchor_age
 ```
 
 ```{r}
+admission <- read_csv("~/mimic/hosp/admissions.csv.gz") |>
+  filter(subject_id == sid) |>
+  print(width = Inf)
+race <- admission$race
 ```
 
+Final plot
 ```{r}
 combined_plot <- ggplot() +
-  geom_segment(data = sid_adt %>%
-                 filter(eventtype != "discharge"),
+  geom_segment(data = sid_adt,
                aes(
                  x = intime, 
                  xend = outtime, 
                  y = "ADT", 
                  yend = "ADT", 
                  color = careunit, 
-                 linewidth = str_detect(careunit, "(ICU|CCU)"))
-  ) +
-  geom_segment(data = sid_lab,
-               aes(
-                 x = charttime, 
-                 xend = storetime, 
-                 y = "Lab", 
-                 yend = "Lab", 
-                 color = "black")
+                 linewidth = str_detect(careunit, "ICU|CCU"))
   ) +
   geom_point(data = sid_lab, aes(x = charttime, y = "Lab"), shape = 3) +
+  geom_point(data = sid_procedure, aes(x = chartdate, y = "Procedure", shape = as.factor(long_title.x))) +
   labs(
-    x = "",
+    x = "Calendar Time",
     y = "",
-    title = str_c("Patient ", sid, " ADT history")
+    title = str_c("Patient ", sid, ", ", gender, ", ", age, " years old, ", race),
+    subtitle = str_c(top_three, collapse = "\n"),
+    color = "Care Unit",
+    shape = "Procedure",
+    size = "Care Unit Type"
+  ) +
+  scale_y_discrete(limits = c("Procedure", "Lab", "ADT")) +
+  theme(legend.position = "bottom",
+        legend.box = "vertical",
+        legend.direction = "horizontal",
+        legend.title.align = 0.5
   )
+
 combined_plot
+```
+
+```{r}
+
 ```
 
 
@@ -338,14 +368,23 @@ Summarize variables `gender` and `anchor_age` by graphics, and explain any patte
 
 **Answer:**
 ```{r}
+ggplot(data = patients_tble, mapping = aes(x =gender)) + 
+  geom_bar()
+```
+
+```{r}
+ggplot(data = patients_tble, mapping = aes(x = anchor_age)) + 
+  geom_histogram()
+```
+
+```{r}
 ggplot(data = patients_tble, mapping = aes(x = gender, y = anchor_age)) + 
   geom_boxplot(notch = TRUE)
 ```
-```{r}
-ggplot(data = patients_tble, mapping = aes(x = gender, y = anchor_age)) + 
-  geom_violin()
-```
-From graphs, we can see that the median of anchor_age of Female is less than male. The range of anchor_age for both female and male are approximately same.
+
+From graphs, we can see that male patients are a little less than female patients. Also, the age of patients is approximately normally distributed, except for a significant high number of patients afrom age 12-15, which is consistent with the practice of date shifting.
+
+In addition, when combining these two variables, the median of anchor_age of Female is less than male. The range of anchor_age for both female and male are approximately same.
 
 ## Q5. Lab results
 
@@ -391,7 +430,7 @@ labevents_filtered
 Join the two tibbles based on subject_id and filter based on the time.
 ```{r}
 labevents_for_icu_stays <- icustays_tble %>% 
-  left_join(labevents_filtered, by = "subject_id") %>%
+  inner_join(labevents_filtered, by = "subject_id") %>%
   group_by(subject_id, stay_id) %>%
   filter(storetime < intime) %>%
   select(subject_id, stay_id, itemid, values) 
@@ -449,7 +488,7 @@ We are interested in the vitals for ICU patients: heart rate (220045), systolic 
 Hint: Use the Parquet format you generated in Homework 2. For reproducibility, make `chartevents_pq` folder available at the current working directory, for example, by a symbolic link.
 
 **Answer:**
-
+Create a symbolic link to the parquet file.
 ```{r eval=FALSE}
 original_path <- "~/Desktop/203b-homework/hw2/chartevents.parquet"
 link_path <- "~/Desktop/203b-homework/hw3/chartevents_pq"
@@ -458,7 +497,60 @@ system(paste("ln -s", original_path, link_path))
 
 ```{r}
 chartevents_tble <- arrow::open_dataset("~/Desktop/203b-homework/hw3/chartevents_pq")
-chartevents_tble 
+
+chartevents_filtered <- chartevents_tble %>% 
+  filter(itemid %in% c(220045, 220179, 220180, 223761, 220210)) %>%
+  select(subject_id, itemid, charttime, value) 
+```
+
+```{r}
+icustays_tble <- icustays_tble %>%
+  mutate(subject_id = as.integer(subject_id))
+
+chartevents_filtered <- chartevents_filtered %>%
+  mutate(subject_id = as.integer(subject_id))
+
+chartevents_for_icu_stays <- chartevents_filtered %>% 
+  inner_join(icustays_tble, by = "subject_id") %>%
+  group_by(subject_id, stay_id) %>%
+  filter(charttime > intime & charttime < outtime) %>%
+  select(subject_id, stay_id, itemid, value) %>%
+  collect()
+chartevents_for_icu_stays
+```
+```{r}
+  group_by(subject_id, stay_id) %>%
+  filter(charttime > intime & charttime < outtime) %>%
+  select(subject_id, stay_id, itemid, value)
+```
+
+```{r}
+chartevents_for_icu_stays %>% collect()
+```
+```{r}
+chartevents_for_icu_stays <- chartevents_for_icu_stays %>%
+  group_by(subject_id, stay_id, itemid) %>%
+  summarise(value = first(value), .groups = 'drop')
+
+df <- chartevents_for_icu_stays  %>%
+  pivot_wider(
+    names_from = itemid,
+    values_from = value,
+    names_prefix = "item_"
+  )
+df
+```
+
+```{r}
+chartevents_tble <- df %>%
+  rename(
+    heart_rate = item_220045,
+    non_invasive_blood_pressure_systolic = item_220179,
+    non_invasive_blood_pressure_diastolic = item_220180,
+    temperature_fahrenheit  = item_223761,
+    respiratory_rate = item_220210
+  )
+chartevents_tble
 ```
 
 ## Q7. Putting things together
@@ -474,6 +566,17 @@ Let us create a tibble `mimic_icu_cohort` for all ICU stays, where rows are all 
 The final `mimic_icu_cohort` should have one row per ICU stay and columns for each variable.
 
 ![](mimic_icu_cohort.png)
+
+**Answer:**
+```{r}
+mimic_icu_cohort <- icustays_tble %>%
+  inner_join(admissions_tble, by = "subject_id") %>%
+  inner_join(patients_tble, by = "subject_id") %>%
+  inner_join(labevents_tble, by = "subject_id") %>%
+  inner_join(chartevents_tble, by = "subject_id")
+mimic_icu_cohort
+```
+
 
 ## Q8. Exploratory data analysis (EDA)
 
