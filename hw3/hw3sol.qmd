@@ -325,9 +325,27 @@ zcat < ~/mimic/hosp/patients.csv.gz | head
 
 Import `patients.csv.gz` (<https://mimic.mit.edu/docs/iv/modules/hosp/patients/>) as a tibble `patients_tble`.
 
+**Answer:**
+
+```{r}
+patients_tble <- read_csv("~/mimic/hosp/patients.csv.gz")
+patients_tble
+```
+
 ### Q4.2 Summary and visualization
 
 Summarize variables `gender` and `anchor_age` by graphics, and explain any patterns you see.
+
+**Answer:**
+```{r}
+ggplot(data = patients_tble, mapping = aes(x = gender, y = anchor_age)) + 
+  geom_boxplot(notch = TRUE)
+```
+```{r}
+ggplot(data = patients_tble, mapping = aes(x = gender, y = anchor_age)) + 
+  geom_violin()
+```
+From graphs, we can see that the median of anchor_age of Female is less than male. The range of anchor_age for both female and male are approximately same.
 
 ## Q5. Lab results
 
@@ -349,6 +367,67 @@ We are interested in the lab measurements of creatinine (50912), potassium (5097
 
 Hint: Use the Parquet format you generated in Homework 2. For reproducibility, make `labevents_pq` folder available at the current working directory `hw3`, for example, by a symbolic link.
 
+Ingest `labevents.parquet` as a tibble `labevents_tble`, and filter the item_ids of our interest then collect the dataframe.
+**Answer:**
+```{r}
+labevents_tble <- arrow::open_dataset("labevents.parquet")
+
+lab_item_ids <- c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)
+labevents_filtered <- labevents_tble %>% 
+  filter(itemid %in% lab_item_ids) %>%
+  select(subject_id, itemid, storetime, value) %>%
+  collect()
+labevents_filtered
+```
+Change the value to numeric and select the columns we need.
+```{r}
+labevents_filtered <- labevents_filtered %>%
+  mutate(values = as.numeric(replace(value, value == "___", NA))) %>%
+  select(subject_id, itemid, storetime, values)
+labevents_filtered
+```
+
+
+Join the two tibbles based on subject_id and filter based on the time.
+```{r}
+labevents_for_icu_stays <- icustays_tble %>% 
+  left_join(labevents_filtered, by = "subject_id") %>%
+  group_by(subject_id, stay_id) %>%
+  filter(storetime < intime) %>%
+  select(subject_id, stay_id, itemid, values) 
+labevents_for_icu_stays
+```
+Reshape the itemids and values to columns.
+```{r}
+df_aggregated <- labevents_for_icu_stays %>%
+  group_by(subject_id, stay_id, itemid) %>%
+  summarise(values = first(values), .groups = 'drop')
+
+df <- df_aggregated  %>%
+  pivot_wider(
+    names_from = itemid,
+    values_from = values,
+    names_prefix = "item_"
+  )
+df
+```
+Rename the columns.
+```{r}
+labevents_tble <- df %>%
+  rename(
+    creatinine = item_50912,
+    potassium = item_50971,
+    sodium = item_50983,
+    chloride = item_50902,
+    bicarbonate = item_50882,
+    hematocrit = item_51221,
+    wbc = item_51301, 
+    glucose = item_50931
+  )
+
+labevents_tble
+```
+
 ## Q6. Vitals from charted events
 
 `chartevents.csv.gz` (<https://mimic.mit.edu/docs/iv/modules/icu/chartevents/>) contains all the charted data available for a patient. During their ICU stay, the primary repository of a patient's information is their electronic chart. The `itemid` variable indicates a single measurement type in the database. The `value` variable is the value measured for `itemid`. The first 10 lines of `chartevents.csv.gz` are
@@ -368,6 +447,19 @@ We are interested in the vitals for ICU patients: heart rate (220045), systolic 
 ![](chartevents_tble.png)
 
 Hint: Use the Parquet format you generated in Homework 2. For reproducibility, make `chartevents_pq` folder available at the current working directory, for example, by a symbolic link.
+
+**Answer:**
+
+```{r eval=FALSE}
+original_path <- "~/Desktop/203b-homework/hw2/chartevents.parquet"
+link_path <- "~/Desktop/203b-homework/hw3/chartevents_pq"
+system(paste("ln -s", original_path, link_path))
+```
+
+```{r}
+chartevents_tble <- arrow::open_dataset("~/Desktop/203b-homework/hw3/chartevents_pq")
+chartevents_tble 
+```
 
 ## Q7. Putting things together
 
