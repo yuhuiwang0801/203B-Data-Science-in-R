@@ -141,8 +141,6 @@ top_three
 ```
 
 
-
-
 ```{r}
 patient <- read_csv("~/mimic/hosp/patients.csv.gz") |>
   filter(subject_id == sid) |>
@@ -171,7 +169,7 @@ combined_plot <- ggplot() +
                  linewidth = str_detect(careunit, "ICU|CCU"))
   ) +
   geom_point(data = sid_lab, aes(x = charttime, y = "Lab"), shape = 3) +
-  geom_point(data = sid_procedure, aes(x = chartdate, y = "Procedure", shape = as.factor(long_title.x))) +
+  geom_point(data = sid_procedure, aes(x = chartdate, y = "Procedure", shape = as.factor(long_title))) +
   labs(
     x = "Calendar Time",
     y = "",
@@ -186,13 +184,10 @@ combined_plot <- ggplot() +
         legend.box = "vertical",
         legend.direction = "horizontal",
         legend.title.align = 0.5
-  )
+  ) +
+  guides(linewidth = "none")
 
 combined_plot
-```
-
-```{r}
-
 ```
 
 
@@ -206,6 +201,65 @@ ICU stays are a subset of ADT history. This figure shows the vitals of the patie
 </p>
 
 Do a similar visualization for the patient `10013310`.
+
+**Answer:**
+
+```{r}
+chartevents_tble <- arrow::open_dataset("~/Desktop/203b-homework/hw3/chartevents_pq")
+
+chartevents_sid <- chartevents_tble %>% 
+  filter(subject_id == sid & itemid %in% c(220045, 220179, 220180, 223761, 220210)) %>%
+  collect() 
+```
+
+```{r}
+chartevents_t <- chartevents_sid %>%
+  mutate(
+    value = as.numeric(replace(value, value == "___", NA)),
+    itemid = case_when(
+      itemid == 220045 ~ "HR",
+      itemid == 220179 ~ "NBPs",
+      itemid == 220180 ~ "NBPd",
+      itemid == 223761 ~ "Temperature F",
+      itemid == 220210 ~ "RR"),
+    itemid = factor(itemid)
+    ) %>%
+  filter(!is.na(value)) %>% 
+  select(subject_id, stay_id, itemid, charttime, value) 
+
+chartevents_t
+```
+```{r}
+chartevents_aggregated <- chartevents_t %>%
+  group_by(stay_id, charttime, itemid) %>%
+  summarise(value = first(value), .groups = 'drop')
+
+chartevents_pivot <- chartevents_aggregated  %>%
+  pivot_wider(
+    names_from = itemid,
+    values_from = value
+  )
+chartevents_pivot 
+```
+```{r}
+ggplot(data = chartevents_t, aes(x = charttime, y = value, color = itemid)) +
+  geom_line() +
+  geom_point() +
+  facet_grid(itemid ~ stay_id, scales = 'free') + 
+  theme_minimal() +
+  labs(
+    title = str_c("Patient ", sid, " ICU stays - Vitals"),
+    x = "Calendar Time",
+    y = "",
+    color = "Vital Sign"
+  ) +
+  scale_x_datetime(date_labels = "%b %d %H:%M", date_breaks = "6 hours") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+    strip.background = element_blank(),
+    legend.position = "none"
+  )
+```
 
 ## Q2. ICU stays
 
@@ -414,15 +468,8 @@ labevents_tble <- arrow::open_dataset("labevents.parquet")
 lab_item_ids <- c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)
 labevents_filtered <- labevents_tble %>% 
   filter(itemid %in% lab_item_ids) %>%
-  select(subject_id, itemid, storetime, value) %>%
+  select(subject_id, itemid, storetime, valuenum) %>%
   collect()
-labevents_filtered
-```
-Change the value to numeric and select the columns we need.
-```{r}
-labevents_filtered <- labevents_filtered %>%
-  mutate(values = as.numeric(replace(value, value == "___", NA))) %>%
-  select(subject_id, itemid, storetime, values)
 labevents_filtered
 ```
 
@@ -433,14 +480,18 @@ labevents_for_icu_stays <- icustays_tble %>%
   inner_join(labevents_filtered, by = "subject_id") %>%
   group_by(subject_id, stay_id) %>%
   filter(storetime < intime) %>%
-  select(subject_id, stay_id, itemid, values) 
+  group_by(subject_id, stay_id, itemid) %>%
+  arrange(storetime, .by_group = TRUE) %>%
+  slice_tail(n = 1) %>%
+  ungroup() %>%
+  select(subject_id, stay_id, itemid, valuenum) 
 labevents_for_icu_stays
 ```
 Reshape the itemids and values to columns.
 ```{r}
 df_aggregated <- labevents_for_icu_stays %>%
   group_by(subject_id, stay_id, itemid) %>%
-  summarise(values = first(values), .groups = 'drop')
+  summarise(values = first(valuenum), .groups = 'drop')
 
 df <- df_aggregated  %>%
   pivot_wider(
@@ -498,47 +549,44 @@ system(paste("ln -s", original_path, link_path))
 ```{r}
 chartevents_tble <- arrow::open_dataset("~/Desktop/203b-homework/hw3/chartevents_pq")
 
+subject_ids_list <- c(unique(icustays_tble$subject_id))
+
 chartevents_filtered <- chartevents_tble %>% 
-  filter(itemid %in% c(220045, 220179, 220180, 223761, 220210)) %>%
-  select(subject_id, itemid, charttime, value) 
+  filter(
+    itemid %in% c(220045, 220179, 220180, 223761, 220210) &
+    subject_id %in% subject_ids_list
+    ) %>%
+  select(subject_id, stay_id, itemid, charttime, valuenum)
 ```
 
 ```{r}
+temp_path <- tempfile()
 icustays_tble <- icustays_tble %>%
-  mutate(subject_id = as.integer(subject_id))
-
-chartevents_filtered <- chartevents_filtered %>%
-  mutate(subject_id = as.integer(subject_id))
-
-chartevents_for_icu_stays <- chartevents_filtered %>% 
-  inner_join(icustays_tble, by = "subject_id") %>%
-  group_by(subject_id, stay_id) %>%
+  mutate(subject_id = as.numeric(subject_id))
+write_dataset(icustays_tble, format = "parquet", path = temp_path)
+icustays_parquet <- arrow::open_dataset(temp_path)
+icustays_parquet
+```
+```{r}
+chartevents_for_icu_stays <- icustays_parquet %>% 
+  inner_join(chartevents_filtered, c("subject_id", "stay_id")) %>%
   filter(charttime > intime & charttime < outtime) %>%
-  select(subject_id, stay_id, itemid, value) %>%
-  collect()
+  select(subject_id, stay_id, itemid, valuenum) 
 chartevents_for_icu_stays
 ```
 ```{r}
-  group_by(subject_id, stay_id) %>%
-  filter(charttime > intime & charttime < outtime) %>%
-  select(subject_id, stay_id, itemid, value)
+chartevents_for_icu_stays_collected <- chartevents_for_icu_stays %>% 
+  collect()
+
 ```
 
 ```{r}
-chartevents_for_icu_stays %>% collect()
-```
-```{r}
-chartevents_for_icu_stays <- chartevents_for_icu_stays %>%
   group_by(subject_id, stay_id, itemid) %>%
-  summarise(value = first(value), .groups = 'drop')
-
-df <- chartevents_for_icu_stays  %>%
-  pivot_wider(
-    names_from = itemid,
-    values_from = value,
-    names_prefix = "item_"
-  )
-df
+  arrange(charttime, .by_group = TRUE) %>%
+  slice_tail(n = 1) %>%
+  ungroup() %>%
+  select(subject_id, stay_id, itemid, valuenum) 
+chartevents_for_icu_stays
 ```
 
 ```{r}
