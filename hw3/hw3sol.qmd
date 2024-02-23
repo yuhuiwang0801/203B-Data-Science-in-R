@@ -30,6 +30,7 @@ library(memuse)
 library(pryr)
 library(R.utils)
 library(tidyverse)
+library(duckdb)
 ```
 
 Display your machine memory.
@@ -82,12 +83,12 @@ sid_adt
 Import `labevents.csv.gz` as a tibble `labevents_tbl`:
 ```{r eval=FALSE}
 original_path <- "~/Desktop/203b-homework/hw2/labevents.parquet"
-link_path <- "~/Desktop/203b-homework/hw3/labevents.parquet"
+link_path <- "~/Desktop/203b-homework/hw3/labevents_pq"
 system(paste("ln -s", original_path, link_path))
 ```
 
 ```{r}
-sid_lab <- arrow::open_dataset("labevents.parquet") |>
+sid_lab <- arrow::open_dataset("labevents_pq") |>
   filter(subject_id == sid) |>
   print(width = Inf)
 
@@ -460,8 +461,10 @@ We are interested in the lab measurements of creatinine (50912), potassium (5097
 
 Hint: Use the Parquet format you generated in Homework 2. For reproducibility, make `labevents_pq` folder available at the current working directory `hw3`, for example, by a symbolic link.
 
-Ingest `labevents.parquet` as a tibble `labevents_tble`, and filter the item_ids of our interest then collect the dataframe.
+
 **Answer:**
+Ingest `labevents.parquet` as a tibble `labevents_tble`, and filter the item_ids of our interest then collect the dataframe.
+
 ```{r}
 labevents_tble <- arrow::open_dataset("labevents.parquet")
 
@@ -546,49 +549,47 @@ link_path <- "~/Desktop/203b-homework/hw3/chartevents_pq"
 system(paste("ln -s", original_path, link_path))
 ```
 
+ingest data
 ```{r}
 chartevents_tble <- arrow::open_dataset("~/Desktop/203b-homework/hw3/chartevents_pq")
 
-subject_ids_list <- c(unique(icustays_tble$subject_id))
-
 chartevents_filtered <- chartevents_tble %>% 
-  filter(
-    itemid %in% c(220045, 220179, 220180, 223761, 220210) &
-    subject_id %in% subject_ids_list
-    ) %>%
-  select(subject_id, stay_id, itemid, charttime, valuenum)
-```
-
-```{r}
-temp_path <- tempfile()
-icustays_tble <- icustays_tble %>%
-  mutate(subject_id = as.numeric(subject_id))
-write_dataset(icustays_tble, format = "parquet", path = temp_path)
-icustays_parquet <- arrow::open_dataset(temp_path)
-icustays_parquet
-```
-```{r}
-chartevents_for_icu_stays <- icustays_parquet %>% 
-  inner_join(chartevents_filtered, c("subject_id", "stay_id")) %>%
-  filter(charttime > intime & charttime < outtime) %>%
-  select(subject_id, stay_id, itemid, valuenum) 
-chartevents_for_icu_stays
-```
-```{r}
-chartevents_for_icu_stays_collected <- chartevents_for_icu_stays %>% 
+  filter(itemid %in% c(220045, 220179, 220180, 223761, 220210)) %>%
+  select(subject_id, stay_id, charttime, itemid, valuenum) %>%
   collect()
 
+chartevents_filtered
 ```
 
+process data
 ```{r}
+chartevents_for_icu_stays <- icustays_tble %>% 
+  left_join(chartevents_filtered, by = c("subject_id", "stay_id")) %>%
+  group_by(subject_id, stay_id) %>%
+  filter(charttime >= intime & charttime <= outtime) %>%
   group_by(subject_id, stay_id, itemid) %>%
   arrange(charttime, .by_group = TRUE) %>%
-  slice_tail(n = 1) %>%
+  slice_min(charttime, n = 1) %>%
   ungroup() %>%
   select(subject_id, stay_id, itemid, valuenum) 
+
 chartevents_for_icu_stays
 ```
+pivot wider
+```{r}
+df_aggregated <- chartevents_for_icu_stays %>%
+  group_by(subject_id, stay_id, itemid) %>%
+  summarise(values = first(valuenum), .groups = 'drop')
 
+df <- df_aggregated  %>%
+  pivot_wider(
+    names_from = itemid,
+    values_from = values,
+    names_prefix = "item_"
+  )
+df
+```
+rename columns
 ```{r}
 chartevents_tble <- df %>%
   rename(
@@ -600,6 +601,7 @@ chartevents_tble <- df %>%
   )
 chartevents_tble
 ```
+
 
 ## Q7. Putting things together
 
@@ -618,12 +620,36 @@ The final `mimic_icu_cohort` should have one row per ICU stay and columns for ea
 **Answer:**
 ```{r}
 mimic_icu_cohort <- icustays_tble %>%
-  inner_join(admissions_tble, by = "subject_id") %>%
-  inner_join(patients_tble, by = "subject_id") %>%
-  inner_join(labevents_tble, by = "subject_id") %>%
-  inner_join(chartevents_tble, by = "subject_id")
+  left_join(admissions_tble, by = c("subject_id", "hadm_id")) 
 mimic_icu_cohort
 ```
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort%>%
+  left_join(patients_tble, by = "subject_id") %>%
+    mutate(age_intime = year(intime) - anchor_year + anchor_age) %>%
+    filter(age_intime >= 18) 
+
+mimic_icu_cohort
+```
+
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort %>%
+  left_join(labevents_tble, by = c("subject_id", "stay_id")) %>%
+  group_by(subject_id, stay_id) %>%
+  slice_tail(n = 1) %>%
+  ungroup()
+mimic_icu_cohort
+```
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort %>%
+  left_join(chartevents_tble, by = c("subject_id", "stay_id")) %>%
+  group_by(subject_id, stay_id) %>%
+  slice_head(n = 1) %>%
+  ungroup()
+
+mimic_icu_cohort
+```
+
 
 
 ## Q8. Exploratory data analysis (EDA)
@@ -637,3 +663,45 @@ Summarize the following information about the ICU stay cohort `mimic_icu_cohort`
 -   Length of ICU stay `los` vs the average vital measurements within the first hour of ICU stay
 
 -   Length of ICU stay `los` vs first ICU unit
+
+**Answer:**
+```{r}
+mimic_icu_cohort %>%
+  ggplot(aes(x = los, y = race)) +
+  geom_histogram() +
+  labs(title = "Length of ICU stay vs Race", x = "Length of ICU stay", y = "Age at intime")
+```
+
+```{r}
+mimic_icu_cohort %>%
+  ggplot(aes(x = los, y = item_50912)) +
+  geom_point() +
+  labs(title = "Length of ICU stay vs Last available lab measurements before ICU stay", x = "Length of ICU stay", y = "Last available lab measurements before ICU stay")
+```
+
+```{r}
+ggplot(los, aes(x = los, y = measurement_value)) +
+  geom_point(alpha = 0.5) +  # Adjust alpha for point transparency if needed
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +  # Add a linear regression line without confidence interval
+  facet_grid(rows = vars(measurement_type)) +  # Create a separate plot for each measurement type
+  labs(title = "Length of ICU Stay vs. First Vital Measurements",
+       x = "Length of Stay (days)", y = "Measurement Value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Improve label readability
+```
+
+```{r}
+mean_los_by_unit <- mimic_icu_cohort %>%
+  group_by(first_careunit) %>%
+  summarise(mean_los = mean(los, na.rm = TRUE)) %>%
+  ungroup() %>%
+  arrange(desc(mean_los))
+
+ggplot(mean_los_by_unit, aes(x = reorder(first_careunit, -mean_los), y = mean_los)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  theme_minimal() +
+  labs(title = "Mean Length of ICU Stay by ICU Unit",
+       x = "First ICU Unit", y = "Mean Length of ICU Stay (days)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 5))
+```
+
