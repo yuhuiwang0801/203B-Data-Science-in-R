@@ -666,28 +666,75 @@ Summarize the following information about the ICU stay cohort `mimic_icu_cohort`
 
 **Answer:**
 ```{r}
-mimic_icu_cohort %>%
-  ggplot(aes(x = los, y = race)) +
-  geom_histogram() +
-  labs(title = "Length of ICU stay vs Race", x = "Length of ICU stay", y = "Age at intime")
-```
-
-```{r}
-mimic_icu_cohort %>%
-  ggplot(aes(x = los, y = item_50912)) +
-  geom_point() +
-  labs(title = "Length of ICU stay vs Last available lab measurements before ICU stay", x = "Length of ICU stay", y = "Last available lab measurements before ICU stay")
-```
-
-```{r}
-ggplot(los, aes(x = los, y = measurement_value)) +
-  geom_point(alpha = 0.5) +  # Adjust alpha for point transparency if needed
-  geom_smooth(method = "lm", color = "blue", se = FALSE) +  # Add a linear regression line without confidence interval
-  facet_grid(rows = vars(measurement_type)) +  # Create a separate plot for each measurement type
-  labs(title = "Length of ICU Stay vs. First Vital Measurements",
-       x = "Length of Stay (days)", y = "Measurement Value") +
+ggplot(mimic_icu_cohort, aes(x = race, y = los)) +
+  geom_boxplot() +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Improve label readability
+  labs(title = "Length of ICU Stay by Race", x = "Race", y = "Length of Stay (days)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r}
+ggplot(mimic_icu_cohort, aes(x = insurance, y = los)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Length of ICU Stay by Insurance", x = "Insurance", y = "Length of Stay (days)") 
+```
+```{r}
+ggplot(mimic_icu_cohort, aes(x = marital_status, y = los)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Length of ICU Stay by Marital Status", x = "Marital Status", y = "Length of Stay (days)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+ggplot(mimic_icu_cohort, aes(x = gender, y = los)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Length of ICU Stay by Gender", x = "Gender", y = "Length of Stay (days)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+ggplot(mimic_icu_cohort, aes(x = age_intime, y = los)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +
+  theme_minimal() +
+  labs(title = "Length of ICU Stay by Age at Admission", x = "Age at Admission", y = "Length of Stay (days)")
+```
+
+2.
+```{r}
+labs_long <- mimic_icu_cohort %>%
+  select(stay_id, los, bicarbonate, chloride, creatinine, glucose, potassium, sodium, hematocrit, wbc) %>%
+  pivot_longer(cols = bicarbonate:wbc, names_to = "lab_measurement", values_to = "measurement_value")
+
+ggplot(labs_long, aes(x = los, y = measurement_value)) +
+  geom_point(aes(color = lab_measurement), alpha = 0.4) +
+  geom_smooth(method = "lm", se = FALSE, aes(color = lab_measurement)) +
+  facet_wrap(~ lab_measurement, scales = "free_y") +
+  labs(title = "Length of ICU Stay vs. Last Lab Measurements Before ICU Stay",
+       x = "Length of ICU Stay (days)", y = "Last Measurement Value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none") # Improve readability
+```
+
+```{r}
+vitals_long <- mimic_icu_cohort %>%
+  select(stay_id, los, heart_rate, non_invasive_blood_pressure_systolic, 
+         non_invasive_blood_pressure_diastolic, respiratory_rate, temperature_fahrenheit) %>%
+  pivot_longer(cols = heart_rate:temperature_fahrenheit, 
+               names_to = "vital_sign", 
+               values_to = "measurement_value")
+
+ggplot(vitals_long, aes(x = los, y = measurement_value)) +
+  geom_point(alpha = 0.4) +  # Use transparency to handle overplotting
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +  # Linear regression line per facet
+  facet_wrap(~ vital_sign, scales = "free_y") +  # Separate plots for each vital sign
+  labs(title = "Length of ICU Stay vs. First Vital Measurements",
+       x = "Length of ICU Stay (days)", y = "Measurement Value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Improve readability of x-axis labels
+
 ```
 
 ```{r}
