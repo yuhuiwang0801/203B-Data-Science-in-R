@@ -61,7 +61,7 @@ Hint: We need to pull information from data files `patients.csv.gz`, `admissions
 
 Interested patients:
 ```{r}
-sid <- 10001217
+sid <- 10013310
 ```
 
 Import `transfers.csv.gz`:
@@ -80,7 +80,7 @@ sid_adt <- sid_adt %>%
 
 sid_adt
 ```
-Import `labevents.csv.gz` as a tibble `labevents_tbl`:
+Ingest `labevents.csv.gz` as a tibble `labevents_tbl`:
 ```{r eval=FALSE}
 original_path <- "~/Desktop/203b-homework/hw2/labevents.parquet"
 link_path <- "~/Desktop/203b-homework/hw3/labevents_pq"
@@ -102,7 +102,7 @@ sid_lab <- sid_lab %>%
 sid_lab
 ```
 
-
+Ingest procedures data
 ```{r}
 sid_procedure <- read_csv("~/mimic/hosp/procedures_icd.csv.gz") |>
   filter(subject_id == sid) |>
@@ -122,6 +122,8 @@ sid_procedure <- sid_procedure |>
   left_join(procedure, by = "icd_code") |>
   print(width = Inf)
 ```
+
+Obtain top three diagnoses
 ```{r}
 sid_diagnosis <- read_csv("~/mimic/hosp/diagnoses_icd.csv.gz") |>
   filter(subject_id == sid) |>
@@ -141,7 +143,7 @@ top_three <- top_three$long_title
 top_three
 ```
 
-
+Obtain other information
 ```{r}
 patient <- read_csv("~/mimic/hosp/patients.csv.gz") |>
   filter(subject_id == sid) |>
@@ -204,7 +206,7 @@ ICU stays are a subset of ADT history. This figure shows the vitals of the patie
 Do a similar visualization for the patient `10013310`.
 
 **Answer:**
-
+Ingest chartevents data
 ```{r}
 chartevents_tble <- arrow::open_dataset("~/Desktop/203b-homework/hw3/chartevents_pq")
 
@@ -213,6 +215,7 @@ chartevents_sid <- chartevents_tble %>%
   collect() 
 ```
 
+Data transformation
 ```{r}
 chartevents_t <- chartevents_sid %>%
   mutate(
@@ -230,6 +233,7 @@ chartevents_t <- chartevents_sid %>%
 
 chartevents_t
 ```
+
 ```{r}
 chartevents_aggregated <- chartevents_t %>%
   group_by(stay_id, charttime, itemid) %>%
@@ -242,6 +246,8 @@ chartevents_pivot <- chartevents_aggregated  %>%
   )
 chartevents_pivot 
 ```
+
+Final plot
 ```{r}
 ggplot(data = chartevents_t, aes(x = charttime, y = value, color = itemid)) +
   geom_line() +
@@ -457,7 +463,9 @@ zcat < ~/mimic/hosp/d_labitems.csv.gz | head
 
 We are interested in the lab measurements of creatinine (50912), potassium (50971), sodium (50983), chloride (50902), bicarbonate (50882), hematocrit (51221), white blood cell count (51301), and glucose (50931). Retrieve a subset of `labevents.csv.gz` that only containing these items for the patients in `icustays_tble`. Further restrict to the last available measurement (by `storetime`) before the ICU stay. The final `labevents_tble` should have one row per ICU stay and columns for each lab measurement.
 
-![](labevents_tble.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ucla-biostat-203b/2024winter/main/hw/hw3/labevents_tble.png" width="60%">
+</p>
 
 Hint: Use the Parquet format you generated in Homework 2. For reproducibility, make `labevents_pq` folder available at the current working directory `hw3`, for example, by a symbolic link.
 
@@ -466,14 +474,13 @@ Hint: Use the Parquet format you generated in Homework 2. For reproducibility, m
 Ingest `labevents.parquet` as a tibble `labevents_tble`, and filter the item_ids of our interest then collect the dataframe.
 
 ```{r}
-labevents_tble <- arrow::open_dataset("labevents.parquet")
+labevents_tble <- arrow::open_dataset("labevents_pq")
 
 lab_item_ids <- c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)
 labevents_filtered <- labevents_tble %>% 
   filter(itemid %in% lab_item_ids) %>%
   select(subject_id, itemid, storetime, valuenum) %>%
   collect()
-labevents_filtered
 ```
 
 
@@ -488,7 +495,6 @@ labevents_for_icu_stays <- icustays_tble %>%
   slice_tail(n = 1) %>%
   ungroup() %>%
   select(subject_id, stay_id, itemid, valuenum) 
-labevents_for_icu_stays
 ```
 Reshape the itemids and values to columns.
 ```{r}
@@ -502,7 +508,6 @@ df <- df_aggregated  %>%
     values_from = values,
     names_prefix = "item_"
   )
-df
 ```
 Rename the columns.
 ```{r}
@@ -517,7 +522,8 @@ labevents_tble <- df %>%
     wbc = item_51301, 
     glucose = item_50931
   )
-
+```
+```{r}
 labevents_tble
 ```
 
@@ -537,7 +543,9 @@ zcat < ~/mimic/icu/d_items.csv.gz | head
 
 We are interested in the vitals for ICU patients: heart rate (220045), systolic non-invasive blood pressure (220179), diastolic non-invasive blood pressure (220180), body temperature in Fahrenheit (223761), and respiratory rate (220210). Retrieve a subset of `chartevents.csv.gz` only containing these items for the patients in `icustays_tble`. Further restrict to the first vital measurement within the ICU stay. The final `chartevents_tble` should have one row per ICU stay and columns for each vital measurement.
 
-![](chartevents_tble.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ucla-biostat-203b/2024winter/main/hw/hw3/chartevents_tble.png" width="60%">
+</p>
 
 Hint: Use the Parquet format you generated in Homework 2. For reproducibility, make `chartevents_pq` folder available at the current working directory, for example, by a symbolic link.
 
@@ -557,8 +565,6 @@ chartevents_filtered <- chartevents_tble %>%
   filter(itemid %in% c(220045, 220179, 220180, 223761, 220210)) %>%
   select(subject_id, stay_id, charttime, itemid, valuenum) %>%
   collect()
-
-chartevents_filtered
 ```
 
 process data
@@ -572,8 +578,6 @@ chartevents_for_icu_stays <- icustays_tble %>%
   slice_min(charttime, n = 1) %>%
   ungroup() %>%
   select(subject_id, stay_id, itemid, valuenum) 
-
-chartevents_for_icu_stays
 ```
 pivot wider
 ```{r}
@@ -587,7 +591,6 @@ df <- df_aggregated  %>%
     values_from = values,
     names_prefix = "item_"
   )
-df
 ```
 rename columns
 ```{r}
@@ -599,6 +602,9 @@ chartevents_tble <- df %>%
     temperature_fahrenheit  = item_223761,
     respiratory_rate = item_220210
   )
+```
+
+```{r}
 chartevents_tble
 ```
 
@@ -615,21 +621,21 @@ Let us create a tibble `mimic_icu_cohort` for all ICU stays, where rows are all 
 
 The final `mimic_icu_cohort` should have one row per ICU stay and columns for each variable.
 
-![](mimic_icu_cohort.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ucla-biostat-203b/2024winter/main/hw/hw3/mimic_icu_cohort.png" width="60%">
+</p>
 
 **Answer:**
 ```{r}
 mimic_icu_cohort <- icustays_tble %>%
   left_join(admissions_tble, by = c("subject_id", "hadm_id")) 
-mimic_icu_cohort
 ```
+
 ```{r}
 mimic_icu_cohort <- mimic_icu_cohort%>%
   left_join(patients_tble, by = "subject_id") %>%
     mutate(age_intime = year(intime) - anchor_year + anchor_age) %>%
     filter(age_intime >= 18) 
-
-mimic_icu_cohort
 ```
 
 ```{r}
@@ -638,8 +644,8 @@ mimic_icu_cohort <- mimic_icu_cohort %>%
   group_by(subject_id, stay_id) %>%
   slice_tail(n = 1) %>%
   ungroup()
-mimic_icu_cohort
 ```
+
 ```{r}
 mimic_icu_cohort <- mimic_icu_cohort %>%
   left_join(chartevents_tble, by = c("subject_id", "stay_id")) %>%
@@ -649,6 +655,7 @@ mimic_icu_cohort <- mimic_icu_cohort %>%
 
 mimic_icu_cohort
 ```
+
 
 
 
@@ -665,59 +672,79 @@ Summarize the following information about the ICU stay cohort `mimic_icu_cohort`
 -   Length of ICU stay `los` vs first ICU unit
 
 **Answer:**
+Length of ICU stay los vs demographic variables (race, insurance, marital_status, gender, age at intime)
+
+boxplot for categorical variables:
+race:
 ```{r}
 ggplot(mimic_icu_cohort, aes(x = race, y = los)) +
   geom_boxplot() +
   theme_minimal() +
-  labs(title = "Length of ICU Stay by Race", x = "Race", y = "Length of Stay (days)") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  labs(title = "Length of ICU Stay by Race", x = "Race", y = "Length of Stay") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 5))
 ```
+
+insurance:
 ```{r}
 ggplot(mimic_icu_cohort, aes(x = insurance, y = los)) +
   geom_boxplot() +
   theme_minimal() +
-  labs(title = "Length of ICU Stay by Insurance", x = "Insurance", y = "Length of Stay (days)") 
+  labs(title = "Length of ICU Stay by Insurance", x = "Insurance", y = "Length of Stay") 
 ```
+
+marital_status:
 ```{r}
 ggplot(mimic_icu_cohort, aes(x = marital_status, y = los)) +
   geom_boxplot() +
   theme_minimal() +
-  labs(title = "Length of ICU Stay by Marital Status", x = "Marital Status", y = "Length of Stay (days)") +
+  labs(title = "Length of ICU Stay by Marital Status", x = "Marital Status", y = "Length of Stay") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+gender:
 ```{r}
 ggplot(mimic_icu_cohort, aes(x = gender, y = los)) +
   geom_boxplot() +
   theme_minimal() +
-  labs(title = "Length of ICU Stay by Gender", x = "Gender", y = "Length of Stay (days)") +
+  labs(title = "Length of ICU Stay by Gender", x = "Gender", y = "Length of Stay") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+scatter plot for continuous variable age at intime:
 ```{r}
 ggplot(mimic_icu_cohort, aes(x = age_intime, y = los)) +
-  geom_point(alpha = 0.4) +
-  geom_smooth(method = "lm", color = "blue", se = FALSE) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
   theme_minimal() +
-  labs(title = "Length of ICU Stay by Age at Admission", x = "Age at Admission", y = "Length of Stay (days)")
+  labs(title = "Length of ICU Stay by Age at Admission", x = "Age at Admission", y = "Length of Stay")
 ```
 
 2.
+Length of ICU stay los vs the last available lab measurements before ICU stay
+
+data wrangling
 ```{r}
 labs_long <- mimic_icu_cohort %>%
   select(stay_id, los, bicarbonate, chloride, creatinine, glucose, potassium, sodium, hematocrit, wbc) %>%
   pivot_longer(cols = bicarbonate:wbc, names_to = "lab_measurement", values_to = "measurement_value")
+```
 
+plot
+```{r}
 ggplot(labs_long, aes(x = los, y = measurement_value)) +
-  geom_point(aes(color = lab_measurement), alpha = 0.4) +
+  geom_point(aes(color = lab_measurement), alpha = 0.2) +
   geom_smooth(method = "lm", se = FALSE, aes(color = lab_measurement)) +
   facet_wrap(~ lab_measurement, scales = "free_y") +
   labs(title = "Length of ICU Stay vs. Last Lab Measurements Before ICU Stay",
-       x = "Length of ICU Stay (days)", y = "Last Measurement Value") +
+       x = "Length of ICU Stay", y = "Last Measurement Value") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none") # Improve readability
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = "none") 
 ```
 
+Length of ICU stay los vs the first vital measurements within the ICU stay
+
+data wrangling
 ```{r}
 vitals_long <- mimic_icu_cohort %>%
   select(stay_id, los, heart_rate, non_invasive_blood_pressure_systolic, 
@@ -725,30 +752,38 @@ vitals_long <- mimic_icu_cohort %>%
   pivot_longer(cols = heart_rate:temperature_fahrenheit, 
                names_to = "vital_sign", 
                values_to = "measurement_value")
-
-ggplot(vitals_long, aes(x = los, y = measurement_value)) +
-  geom_point(alpha = 0.4) +  # Use transparency to handle overplotting
-  geom_smooth(method = "lm", se = FALSE, color = "blue") +  # Linear regression line per facet
-  facet_wrap(~ vital_sign, scales = "free_y") +  # Separate plots for each vital sign
-  labs(title = "Length of ICU Stay vs. First Vital Measurements",
-       x = "Length of ICU Stay (days)", y = "Measurement Value") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Improve readability of x-axis labels
-
 ```
 
+plot
+```{r}
+ggplot(vitals_long, aes(x = los, y = measurement_value)) +
+  geom_point(alpha = 0.2) + 
+  geom_smooth(method = "lm", se = FALSE, color = "blue") + 
+  facet_wrap(~ vital_sign, scales = "free_y") +  
+  labs(title = "Length of ICU Stay vs. First Vital Measurements",
+       x = "Length of ICU Stay", y = "Measurement Value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+
+Length of ICU stay los vs first ICU unit
+
+summarise the mean length of ICU stay by first ICU unit
 ```{r}
 mean_los_by_unit <- mimic_icu_cohort %>%
   group_by(first_careunit) %>%
   summarise(mean_los = mean(los, na.rm = TRUE)) %>%
   ungroup() %>%
   arrange(desc(mean_los))
+```
 
+plot
+```{r}
 ggplot(mean_los_by_unit, aes(x = reorder(first_careunit, -mean_los), y = mean_los)) +
   geom_bar(stat = "identity", fill = "skyblue") +
   theme_minimal() +
   labs(title = "Mean Length of ICU Stay by ICU Unit",
-       x = "First ICU Unit", y = "Mean Length of ICU Stay (days)") +
+       x = "First ICU Unit", y = "Mean Length of ICU Stay") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 5))
 ```
 
