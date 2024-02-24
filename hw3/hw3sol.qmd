@@ -186,7 +186,8 @@ combined_plot <- ggplot() +
   theme(legend.position = "bottom",
         legend.box = "vertical",
         legend.direction = "horizontal",
-        legend.title.align = 0.5
+        legend.title.align = 0.5,
+        legend.text = element_text(size = 6)
   ) +
   guides(linewidth = "none")
 
