@@ -209,7 +209,7 @@ summary_table <- df %>%
   select(first_careunit, last_careunit, los, los_long, admission_type, admission_location, discharge_location, insurance, language, marital_status, race, hospital_expire_flag, gender, dod, sodium, chloride, creatinine, potassium, glucose, hematocrit, wbc, bicarbonate, temperature_fahrenheit, non_invasive_blood_pressure_diastolic, respiratory_rate, non_invasive_blood_pressure_systolic, heart_rate, age_intime) %>%
   tbl_summary(by = los_long)
 
-print(summary_table)
+summary_table
 ```
 
 ### Q1.9 Save the final tibble
@@ -248,3 +248,18 @@ Develop a Shiny app for exploring the ICU cohort data created in Q1. The app sho
 <p align="center">
   <img src="https://raw.githubusercontent.com/ucla-biostat-203b/2024winter/main/hw/hw4/Q2example3.png" width="20%">
 </p>
+
+
+```{r}
+# path to the service account token 
+satoken <- "biostat-203b-2024-winter-313290ce47a6.json"
+# BigQuery authentication using service account
+bq_auth(path = satoken)
+con_bq <- dbConnect(
+  bigrquery::bigquery(),
+  project = "biostat-203b-2024-winter",
+  dataset = "mimic4_v2_2",
+  billing = "biostat-203b-2024-winter"
+)
+con_bq
+```
