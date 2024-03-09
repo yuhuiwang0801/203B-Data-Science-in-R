@@ -152,7 +152,11 @@ Connect to `chartevents` table and retrieve a subset that only contain subjects 
 
 **Answer:**
 ```{r}
-chartevents_tble <- tbl(con_bq, "chartevents") |>
+chartevents_tble <- tbl(con_bq, "chartevents") 
+```
+
+```{r}
+chartevents_tble <- chartevents_tble |>
   filter(itemid %in% c(
     220045,
     220179,
@@ -164,7 +168,11 @@ chartevents_tble <- tbl(con_bq, "chartevents") |>
 
 ```{r}
 chartevents_tble <- chartevents_tble |>
-  left_join(icustays_tble, by = c("subject_id", "stay_id")) |>
+  left_join(icustays_tble, by = c("subject_id", "stay_id")) 
+```
+
+```{r}
+chartevents_tble <- chartevents_tble |>
   filter(charttime >= intime, charttime <= outtime) 
 ```
 
@@ -173,8 +181,12 @@ chartevents_tble <- chartevents_tble |>
   group_by(subject_id, stay_id, itemid) |>
   arrange(charttime, .by_group = TRUE) |>
   slice_min(charttime, n = 1) |>
-  select(subject_id, stay_id, itemid, valuenum) |>
   ungroup() 
+```
+
+```{r}
+chartevents_tble <- chartevents_tble |>
+  select(subject_id, stay_id, itemid, valuenum) 
 ```
 
 ```{r}
@@ -206,7 +218,11 @@ This step is similar to Q7 of HW3. Using _one_ chain of pipes `|>` to perform fo
 **Answer:**
 ```{r}
 mimic_icu_cohort <- icustays_tble |>
-  left_join(admissions_tble, by = c("subject_id", "hadm_id")) |>
+  left_join(admissions_tble, by = c("subject_id", "hadm_id")) 
+```
+
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort |>
   left_join(patients_tble, by = "subject_id") 
 ```
 
@@ -218,7 +234,11 @@ mimic_icu_cohort <- mimic_icu_cohort |>
 
 ```{r}
 mimic_icu_cohort <- mimic_icu_cohort |>
-  left_join(labevents_tble, by = c("subject_id", "stay_id")) |>
+  left_join(labevents_tble, by = c("subject_id", "stay_id")) 
+```
+
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort |>
   left_join(chartevents_tble, by = c("subject_id", "stay_id")) |>
   collect() |>
   print(width = Inf)
@@ -236,10 +256,34 @@ Hint: Below is a numerical summary of my tibble after preprocessing:
 ```{r}
 mimic_icu_cohort <- mimic_icu_cohort %>%
   mutate(
-    first_careunit = fct_lump(first_careunit, n = 4, other_level = "Other"),
-    last_careunit = fct_lump(last_careunit, n = 4, other_level = "Other"),
-    admission_type = fct_lump(admission_type, n = 4, other_level = "Other"),
-    admission_location = fct_lump(admission_location, n = 3, other_level = "Other"),
+    first_careunit = fct_lump(first_careunit, n = 4, other_level = "Other")
+  )
+```
+
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort %>%
+  mutate(
+    last_careunit = fct_lump(last_careunit, n = 4, other_level = "Other")
+  )
+```
+
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort %>%
+  mutate(
+    admission_type = fct_lump(admission_type, n = 4, other_level = "Other")
+  )
+```
+
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort %>%
+  mutate(
+    admission_location = fct_lump(admission_location, n = 3, other_level = "Other")
+  )
+```
+
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort %>%
+  mutate(
     discharge_location = fct_lump(discharge_location, n = 4, other_level = "Other")
   )
 ```
