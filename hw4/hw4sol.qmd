@@ -65,6 +65,8 @@ dbListTables(con_bq)
 ### Q1.2 `icustays` data
 
 Connect to the `icustays` table.
+
+**Answer:**
 ```{r}
 # full ICU stays table
 icustays_tble <- tbl(con_bq, "icustays") |>
@@ -75,6 +77,8 @@ icustays_tble <- tbl(con_bq, "icustays") |>
 ### Q1.3 `admissions` data
 
 Connect to the `admissions` table.
+
+**Answer:**
 ```{r}
 admissions_tble <- tbl(con_bq, "admissions") |>
   show_query() |>
@@ -84,6 +88,8 @@ admissions_tble <- tbl(con_bq, "admissions") |>
 ### Q1.4 `patients` data
 
 Connect to the `patients` table.
+
+**Answer:**
 ```{r}
 patients_tble <- tbl(con_bq, "patients") |>
   show_query() |>
@@ -94,6 +100,7 @@ patients_tble <- tbl(con_bq, "patients") |>
 
 Connect to the `labevents` table and retrieve a subset that only contain subjects who appear in `icustays_tble` and the lab items listed in HW3. Only keep the last lab measurements before the ICU stay and pivot lab items to become variables/columns. Write all steps in _one_ chain of pipes.
 
+**Answer:**
 ```{r}
 labevents_tble <- tbl(con_bq, "labevents") |>
   filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)) |>
@@ -103,11 +110,7 @@ labevents_tble <- tbl(con_bq, "labevents") |>
   arrange(storetime, .by_group = TRUE) |>
   slice_max(storetime, n = 1) |>
   ungroup() |>
-  select(subject_id, stay_id, itemid, valuenum)
-```
-
-```{r}
-labevents_tble <- labevents_tble |>
+  select(subject_id, stay_id, itemid, valuenum) |>
   pivot_wider(names_from = itemid, values_from = valuenum, names_prefix = "item_") |>
   rename(
     creatinine = item_50912,
@@ -127,7 +130,7 @@ labevents_tble <- labevents_tble |>
 
 Connect to `chartevents` table and retrieve a subset that only contain subjects who appear in `icustays_tble` and the chart events listed in HW3. Only keep the first chart events during ICU stay and pivot chart events to become variables/columns. Write all steps in _one_ chain of pipes.
 
-
+**Answer:**
 ```{r}
 chartevents_tble <- tbl(con_bq, "chartevents") |>
   filter(itemid %in% c(
@@ -143,11 +146,7 @@ chartevents_tble <- tbl(con_bq, "chartevents") |>
   arrange(charttime, .by_group = TRUE) |>
   slice_min(charttime, n = 1) |>
   select(subject_id, stay_id, itemid, valuenum) |>
-  ungroup() 
-```
-
-```{r}
-chartevents_tble <- chartevents_tble |>
+  ungroup() |>
   pivot_wider(names_from = itemid, values_from = valuenum, names_prefix = "item_") |>
   rename(
     heart_rate = item_220045,
@@ -164,6 +163,7 @@ chartevents_tble <- chartevents_tble |>
 
 This step is similar to Q7 of HW3. Using _one_ chain of pipes `|>` to perform following data wrangling steps: (i) start with the `icustays_tble`, (ii) merge in admissions and patients tables, (iii) keep adults only (age at ICU intime >= 18), (iv) merge in the labevents and chartevents tables, (v) `collect` the tibble.
 
+**Answer:**
 ```{r}
 mimic_icu_cohort <- icustays_tble |>
   left_join(admissions_tble, by = c("subject_id", "hadm_id")) |>
@@ -184,7 +184,7 @@ Hint: Below is a numerical summary of my tibble after preprocessing:
 
 <iframe width=95% height="500" src="./mimic_icu_cohort_gtsummary.html"></iframe>
 
-
+**Answer:**
 ```{r}
 mimic_icu_cohort <- mimic_icu_cohort %>%
   mutate(
@@ -248,3 +248,6 @@ Develop a Shiny app for exploring the ICU cohort data created in Q1. The app sho
 <p align="center">
   <img src="https://raw.githubusercontent.com/ucla-biostat-203b/2024winter/main/hw/hw4/Q2example3.png" width="20%">
 </p>
+
+**Answer:**
+Please refer to the shiny app.
