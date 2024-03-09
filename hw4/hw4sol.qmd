@@ -103,15 +103,31 @@ Connect to the `labevents` table and retrieve a subset that only contain subject
 **Answer:**
 ```{r}
 labevents_tble <- tbl(con_bq, "labevents") |>
-  filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)) |>
+  filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)) 
+```
+
+```{r}
+labevents_tble <- labevents_tble |>
   left_join(icustays_tble, by = "subject_id") |>
-  filter(storetime < intime) |>
+  filter(storetime < intime) 
+```
+
+```{r}
+labevents_tble <- labevents_tble |>
   group_by(subject_id, stay_id, itemid) |>
   arrange(storetime, .by_group = TRUE) |>
   slice_max(storetime, n = 1) |>
-  ungroup() |>
+  ungroup() 
+```
+
+```{r}
+labevents_tble <- labevents_tble |>
   select(subject_id, stay_id, itemid, valuenum) |>
-  pivot_wider(names_from = itemid, values_from = valuenum, names_prefix = "item_") |>
+  pivot_wider(names_from = itemid, values_from = valuenum, names_prefix = "item_") 
+```
+
+```{r}
+labevents_tble <- labevents_tble |>
   rename(
     creatinine = item_50912,
     potassium = item_50971,
@@ -121,7 +137,11 @@ labevents_tble <- tbl(con_bq, "labevents") |>
     hematocrit = item_51221,
     wbc = item_51301, 
     glucose = item_50931
-  ) |>
+  ) 
+```
+
+```{r}
+labevents_tble <- labevents_tble |>
   arrange(subject_id, stay_id) |>
   print(width = Inf)
 ```
@@ -139,22 +159,42 @@ chartevents_tble <- tbl(con_bq, "chartevents") |>
     220180,
     223761,
     220210
-    )) |>
+    )) 
+```
+
+```{r}
+chartevents_tble <- chartevents_tble |>
   left_join(icustays_tble, by = c("subject_id", "stay_id")) |>
-  filter(charttime >= intime, charttime <= outtime) |>
+  filter(charttime >= intime, charttime <= outtime) 
+```
+
+```{r}
+chartevents_tble <- chartevents_tble |>
   group_by(subject_id, stay_id, itemid) |>
   arrange(charttime, .by_group = TRUE) |>
   slice_min(charttime, n = 1) |>
   select(subject_id, stay_id, itemid, valuenum) |>
-  ungroup() |>
-  pivot_wider(names_from = itemid, values_from = valuenum, names_prefix = "item_") |>
+  ungroup() 
+```
+
+```{r}
+chartevents_tble <- chartevents_tble |>
+  pivot_wider(names_from = itemid, values_from = valuenum, names_prefix = "item_") 
+```
+
+```{r}
+chartevents_tble <- chartevents_tble |>
   rename(
     heart_rate = item_220045,
     non_invasive_blood_pressure_systolic = item_220179,
     non_invasive_blood_pressure_diastolic = item_220180,
     temperature_fahrenheit  = item_223761,
     respiratory_rate = item_220210
-  ) |>
+  ) 
+```
+
+```{r}
+chartevents_tble <- chartevents_tble |>
   arrange(subject_id, stay_id) |>
   print(width = Inf)
 ```
@@ -167,9 +207,17 @@ This step is similar to Q7 of HW3. Using _one_ chain of pipes `|>` to perform fo
 ```{r}
 mimic_icu_cohort <- icustays_tble |>
   left_join(admissions_tble, by = c("subject_id", "hadm_id")) |>
-  left_join(patients_tble, by = "subject_id") |>
+  left_join(patients_tble, by = "subject_id") 
+```
+
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort |>
   mutate(age_intime = year(intime) - anchor_year + anchor_age) |>
-  filter(age_intime >= 18) |>
+  filter(age_intime >= 18) 
+```
+
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort |>
   left_join(labevents_tble, by = c("subject_id", "stay_id")) |>
   left_join(chartevents_tble, by = c("subject_id", "stay_id")) |>
   collect() |>
@@ -192,7 +240,13 @@ mimic_icu_cohort <- mimic_icu_cohort %>%
     last_careunit = fct_lump(last_careunit, n = 4, other_level = "Other"),
     admission_type = fct_lump(admission_type, n = 4, other_level = "Other"),
     admission_location = fct_lump(admission_location, n = 3, other_level = "Other"),
-    discharge_location = fct_lump(discharge_location, n = 4, other_level = "Other"),
+    discharge_location = fct_lump(discharge_location, n = 4, other_level = "Other")
+  )
+```
+
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort %>%
+  mutate(
     race = case_when(
     str_detect(race, "^ASIAN") ~ "ASIAN",
     str_detect(race, "^BLACK") ~ "BLACK",
