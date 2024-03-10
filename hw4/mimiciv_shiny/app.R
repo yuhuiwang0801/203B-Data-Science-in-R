@@ -6,6 +6,7 @@ library(dbplyr)
 library(DBI)
 library(gt)
 library(gtsummary)
+library(DT)
 
 # Connect
 satoken <- "biostat-203b-2024-winter-313290ce47a6.json"
@@ -49,6 +50,7 @@ patient_id <- mimic_icu_cohort %>%
   collect() %>%
   pull(subject_id) 
 
+
 ui <- fluidPage(
   titlePanel("MIMIC-IV Data Overview"),
   h3("Author: Yuhui Wang"),
@@ -75,7 +77,8 @@ ui <- fluidPage(
                              "Remove outliers in IQR method for measurements?")
              ),
              mainPanel(
-               plotOutput("SummaryPlot"))
+               plotOutput("SummaryPlot"),
+               gt_output("SummaryTable"))
            )
   ),
   tabPanel("Patient's ADT and ICU stay information", fluid = TRUE,
@@ -88,7 +91,8 @@ ui <- fluidPage(
                               multiple = FALSE)
              ),
              mainPanel(
-               plotOutput("ADTPlot"))
+               plotOutput("ADTPlot"),
+               plotOutput("ICUPlot"))
            )
   )
   )
@@ -125,6 +129,7 @@ vitals <- mimic_icu_cohort %>%
          non_invasive_blood_pressure_diastolic, 
          respiratory_rate, 
          temperature_fahrenheit)
+
 
 
 server <- function(input, output, session) {
@@ -238,11 +243,44 @@ server <- function(input, output, session) {
              y = "Value") +
         theme_minimal() 
     }
+    
+    
   })
   
+  output$SummaryTable <- render_gt({
+    # Fetch the reactive data
+    
+    
+    if (input$variable %in% c("lab_measurements", "vitals")) {
+      data <- reactiveData()
+      variable <- input$variable
+      summary_table <- data %>%
+        tbl_summary(
+          by = variable, 
+          statistic = all_continuous() ~ "{mean} ({sd})", 
+          missing = "no" 
+        ) %>%
+        add_p() %>% 
+        add_stat_label() %>%
+        add_n() %>%
+        as_gt() 
+      
+      summary_table
+    } else {
+      variable <- input$variable
+      mimic_icu_cohort %>%
+        group_by(!!sym(variable)) %>%
+        summarise(Count = n(),
+                  Proportion = n() / nrow(mimic_icu_cohort)) %>% 
+        arrange(desc(Count))
+    }
+   
+    })
 
 #2
-  
+
+
+
 reactiveData2 <- reactive({
   req(input$patientID)  
   sid <- as.numeric(input$patientID)
@@ -273,7 +311,6 @@ reactiveData2 <- reactive({
 })
   
   output$ADTPlot <- renderPlot({
-    # Fetch the reactive data
     data_list <- reactiveData2()
     req(data_list)  
     sid <- data_list$sid
@@ -290,14 +327,14 @@ reactiveData2 <- reactive({
       geom_segment(
         data = sid_adt %>% 
           filter(eventtype != "discharge"),
-          mapping = aes(
-            x = intime,
-            xend = outtime,
-            y = "ADT",
-            yend = "ADT",
-            color = careunit,
-            linewidth = str_detect(careunit, "(ICU|CCU)")
-          ),
+        mapping = aes(
+          x = intime,
+          xend = outtime,
+          y = "ADT",
+          yend = "ADT",
+          color = careunit,
+          linewidth = str_detect(careunit, "(ICU|CCU)")
+        ),
       ) +
       geom_point(
         data = sid_lab %>%
@@ -325,14 +362,14 @@ reactiveData2 <- reactive({
           sid_info$anchor_age + year(sid_adm$admittime[1]) - sid_info$anchor_year, 
           " years old, ",
           str_to_lower(sid_adm$race[1])
-          ),
+        ),
         subtitle = str_c(str_to_lower(
           sid_diag$long_title[1:3]), collapse = "\n"),
         x = "Calendar Time",
         y = "",
         color = "Care Unit",
         shape = "Procedure"
-        ) +
+      ) +
       guides(linewidth = "none") +
       scale_y_discrete(limits = rev) +
       theme_light() +
@@ -340,9 +377,42 @@ reactiveData2 <- reactive({
         legend.position = "bottom",
         legend.box = "vertical"
       )
-      
 })
+  
+  
+  output$ICUPlot <- renderPlot({
+    
+    # Fetch the reactive data
+    sid <- as.numeric(input$patientID)
+    #plot
+    items = tbl(con_bq, "d_items") %>%
+      filter(itemid %in% c(220045, 
+                           220179, 
+                           220180, 
+                           220210, 
+                           223761))
+    
+    chart = tbl(con_bq, "chartevents") %>% 
+      filter(subject_id %in% sid, 
+             itemid %in% c(220045, 
+                           220179, 
+                           220180, 
+                           220210, 
+                           223761))
+    
+    icudata = left_join(chart, items)
+    
+    
+    ggplot(icudata, aes(x = charttime, y = valuenum, color = abbreviation, group = abbreviation)) +
+      geom_line() +
+      geom_point() +
+      facet_grid(abbreviation ~ stay_id, scales = "free") +
+      labs(title = str_c("Patient ", sid, " ICU stays - Vitals"),
+           x = "",
+           y = "")
 
+  })
+  
 }
 
 shinyApp(ui, server)

@@ -166,6 +166,7 @@ chartevents_tble <- tbl(con_bq, "chartevents") |>
   ungroup() |>
   select(subject_id, 
          stay_id, 
+         charttime,
          itemid, 
          valuenum) |>
   pivot_wider(names_from = itemid, 
