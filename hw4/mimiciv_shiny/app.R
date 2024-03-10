@@ -59,19 +59,20 @@ ui <- fluidPage(
            sidebarLayout(
              sidebarPanel(
                selectInput("variable", "Variable of interst",
-                           choices = c("First care unit" = "first_careunit", 
-                                       "Last care unit" = "last_careunit", 
-                                       "Admission type" = "admission_type", 
-                                       "Admission location" = "admission_location",
-                                       "Discharge location" = "discharge_location", 
-                                       "Insurance" = "insurance", 
-                                       "Language" = "language", 
-                                       "Marital status" = "marital_status",
-                                       "Race" = "race",
-                                       "Hospital expire flag" = "hospital_expire_flag",
-                                       "Gender" = "gender",
-                                       "Labevents" = "lab_measurements",
-                                       "Vitals" = "vitals"
+                        choices = c("First care unit" = "first_careunit", 
+                                    "Last care unit" = "last_careunit", 
+                                    "Admission type" = "admission_type", 
+                                    "Admission location" = "admission_location",
+                                    "Discharge location" = "discharge_location", 
+                                    "Insurance" = "insurance", 
+                                    "Language" = "language", 
+                                    "Marital status" = "marital_status",
+                                    "Race" = "race",
+                                    "Hospital expire flag" = 
+                                      "hospital_expire_flag",
+                                    "Gender" = "gender",
+                                    "Labevents" = "lab_measurements",
+                                    "Vitals" = "vitals"
                            )),
                checkboxInput("remove", 
                              "Remove outliers in IQR method for measurements?")
@@ -359,7 +360,8 @@ reactiveData2 <- reactive({
         title = str_c(
           "Patient ", sid, ", ",
           sid_info$gender, ", ",
-          sid_info$anchor_age + year(sid_adm$admittime[1]) - sid_info$anchor_year, 
+          sid_info$anchor_age + year(sid_adm$admittime[1]) - 
+            sid_info$anchor_year, 
           " years old, ",
           str_to_lower(sid_adm$race[1])
         ),
@@ -403,7 +405,10 @@ reactiveData2 <- reactive({
     icudata = left_join(chart, items)
     
     
-    ggplot(icudata, aes(x = charttime, y = valuenum, color = abbreviation, group = abbreviation)) +
+    ggplot(icudata, aes(x = charttime, 
+                        y = valuenum, 
+                        color = abbreviation, 
+                        group = abbreviation)) +
       geom_line() +
       geom_point() +
       facet_grid(abbreviation ~ stay_id, scales = "free") +
