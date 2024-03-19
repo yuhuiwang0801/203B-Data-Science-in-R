@@ -72,15 +72,15 @@ mimic_icu_cohort <- mimic_icu_cohort %>%
   select(-c(last_careunit, 
             outtime, dischtime, deathtime, discharge_location, 
             edouttime, hospital_expire_flag, los, dod, 
-            admit_provider_id, intime, admittime, charttime, 
+            admit_provider_id, intime, admittime, 
             edregtime, anchor_year_group)) %>%
   mutate(los_long = factor(ifelse(los_long, "long", "short"))) %>%
   mutate(across(where(is.character), as.factor))
 ```
 
 ```{r}
-mimic_icu_cohort <- mimic_icu_cohort %>%
-  head(10000)
+# mimic_icu_cohort <- mimic_icu_cohort %>%
+#   head(10000)
 ```
 
 ```{r}
@@ -169,14 +169,6 @@ lr_wf <-
 lr_wf
 ```
 
-```{r}
-# Prepare the recipe
-prepared_recipe <- prep(norm_recipe, training = mimic_other)
-
-# Bake a sample dataset
-sample_data <- bake(prepared_recipe, new_data = NULL)
-head(sample_data)
-```
 Tuning grid
 ```{r}
 param_grid_lr <- grid_regular(
@@ -250,7 +242,7 @@ rf_wf
 Tuning grid
 ```{r}
 param_grid_rf <- grid_regular(
-  trees(range = c(100L, 400L)), 
+  trees(range = c(300L, 600L)), 
   mtry(range = c(1L, 7L)),
   levels = c(3, 5)
   )
@@ -607,6 +599,31 @@ final_tree_gb %>%
   extract_fit_parsnip() %>%
   vip()
 ```
+
+MLP
+```{r}
+# Final workflow
+mlp_final_wf <- mlp_wf |>
+  finalize_workflow(best_mlp)
+mlp_final_wf
+```
+
+```{r}
+# Fit the whole training set, then predict the test cases
+mlp_final_fit <- 
+  mlp_final_wf |>
+  last_fit(data_split)
+mlp_final_fit
+```
+
+```{r}
+# Test metrics
+mlp_final_fit |> 
+  collect_metrics()
+```
+
+
+
 
 Stacking
 ```{r}
