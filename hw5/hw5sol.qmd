@@ -1,0 +1,585 @@
+---
+title: "Biostat 203B Homework 5"
+subtitle: Due Mar 22 @ 11:59PM
+author: "Your Name and UID"
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: false
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+---
+
+## Predicting ICU duration
+
+Using the ICU cohort `mimiciv_icu_cohort.rds` you built in Homework 4, develop at least three machine learning approaches (logistic regression with enet regularization, random forest, boosting, SVM, MLP, etc) plus a model stacking approach for predicting whether a patient's ICU stay will be longer than 2 days. You should use the `los_long` variable as the outcome. You algorithms can use patient demographic information (gender, age at ICU `intime`, marital status, race), ICU admission information (first care unit), the last lab measurements before the ICU stay, and first vital measurements during ICU stay as features. You are welcome to use any feature engineering techniques you think are appropriate; but make sure to not use features that are not available at an ICU stay's `intime`. For instance, `last_careunit` cannot be used in your algorithms. 
+
+```{r setup}
+library(bigrquery)
+library(dbplyr)
+library(DBI)
+library(gt)
+library(gtsummary)
+library(tidyverse)
+library(tidymodels)
+library(styler)
+library(glmnet)
+library(GGally)
+library(ranger)
+library(kernlab)
+library(keras)
+library(stacks)
+library(vip)
+library(rpart)
+```
+
+1. Data preprocessing and feature engineering.
+
+Ingest the data
+```{r}
+# path to the service account token
+satoken <- "biostat-203b-2024-winter-313290ce47a6.json"
+# BigQuery authentication using service account
+bq_auth(path = satoken)
+```
+Connect to BigQuery database `mimic4_v2_2` in GCP (Google Cloud Platform), using the project billing account `biostat-203b-2024-winter`.
+```{r}
+# connect to the BigQuery database `biostat-203b-2024-winter.mimic4_v2_2`
+con_bq <- dbConnect(
+  bigrquery::bigquery(),
+  project = "biostat-203b-2024-winter",
+  dataset = "mimic4_v2_2",
+  billing = "biostat-203b-2024-winter"
+)
+con_bq
+```
+
+```{r}
+dbListTables(con_bq)
+```
+
+```{r}
+mimic_icu_cohort <- readRDS("./mimic_icu_cohort.rds")
+```
+
+
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort %>%
+  select(-c(last_careunit, 
+            outtime, dischtime, deathtime, discharge_location, 
+            edouttime, hospital_expire_flag, los, dod, 
+            admit_provider_id, intime, admittime, charttime, 
+            edregtime, anchor_year_group)) %>%
+  mutate(los_long = factor(ifelse(los_long, "long", "short"))) %>%
+  mutate(across(where(is.character), as.factor))
+```
+
+```{r}
+mimic_icu_cohort <- mimic_icu_cohort %>%
+  head(10000)
+```
+
+```{r}
+tbl_summary(mimic_icu_cohort, by = los_long)
+```
+
+2. Partition data into 50% training set and 50% test set. Stratify partitioning according to `los_long`. For grading purpose, sort the data by `subject_id`, `hadm_id`, and `stay_id` and use the seed `203` for the initial data split. Below is the sample code.
+```{r}
+set.seed(203)
+
+# sort
+mimiciv_icu_cohort <- mimic_icu_cohort |>
+  arrange(subject_id, hadm_id, stay_id) |>
+  select(-c(subject_id, hadm_id, stay_id)) 
+
+data_split <- initial_split(
+  mimiciv_icu_cohort,
+  # stratify by los_long
+  strata = "los_long",
+  prop = 0.5
+)
+
+data_split
+```
+
+```{r}
+# training set
+mimic_other <- training(data_split)
+dim(mimic_other)
+```
+
+```{r}
+# test set
+mimic_test <- testing(data_split)
+dim(mimic_test)
+```
+
+Recipe
+```{r}
+norm_recipe <- 
+  recipe(
+    los_long ~ .,
+    data = mimic_other
+  ) %>%
+  step_impute_mean(all_numeric(), -all_outcomes()) %>%
+  # Impute categorical variables using KNN or another appropriate method
+  step_impute_knn(all_nominal(), -all_outcomes()) %>%
+  # Convert all nominal variables to dummy variables, excluding the outcome
+  step_dummy(all_nominal(), -all_outcomes()) %>%
+  # Remove zero variance predictors
+  step_zv(all_numeric_predictors()) %>%
+  # Normalize all numeric predictors
+  step_normalize(all_numeric_predictors())
+
+norm_recipe
+```
+
+3. Train and tune the models using the training set.
+
+Set cross-validation
+```{r}
+set.seed(203)
+folds <- vfold_cv(mimic_other, v = 5)
+folds
+```
+
+Model
+
+Logistic regression with enet regularization
+```{r}
+enet_mod <-
+  logistic_reg(
+    penalty = tune(), 
+    mixture = tune(),
+    mode = "classification") %>%
+  set_engine("glmnet") 
+enet_mod
+```
+
+Workflow
+```{r}
+lr_wf <-
+  workflow() %>%
+  add_recipe(norm_recipe) %>%
+  add_model(enet_mod)
+lr_wf
+```
+
+```{r}
+# Prepare the recipe
+prepared_recipe <- prep(norm_recipe, training = mimic_other)
+
+# Bake a sample dataset
+sample_data <- bake(prepared_recipe, new_data = NULL)
+head(sample_data)
+```
+Tuning grid
+```{r}
+param_grid_lr <- grid_regular(
+  penalty(range = c(-6, 3)), 
+  mixture(),
+  levels = c(100, 5)
+  )
+param_grid_lr
+```
+
+
+Fit cross-validation
+```{r}
+enet_fit <- 
+  lr_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = param_grid_lr,
+    metrics = metric_set(roc_auc, accuracy),
+    control = control_stack_grid()
+    )
+enet_fit
+```
+Visualize CV results
+```{r}
+enet_fit |>
+  # aggregate metrics from K folds
+  collect_metrics() |>
+  print(width = Inf) |>
+  filter(.metric == "roc_auc") |>
+  ggplot(mapping = aes(x = penalty, y = mean, color = factor(mixture))) +
+  geom_point() +
+  labs(x = "Penalty", y = "CV AUC") +
+  scale_x_log10()
+```
+Show the top 5 models
+```{r}
+enet_fit |>
+  show_best("roc_auc")
+```
+Select the best model
+```{r}
+best_logit <- enet_fit |>
+  select_best("roc_auc")
+best_logit
+```
+
+
+
+
+Random forest
+```{r}
+rf_mod <- 
+  rand_forest(
+    mode = "classification",
+    # Number of predictors randomly sampled in each split
+    mtry = tune(),
+    # Number of trees in ensemble
+    trees = tune()
+  ) %>% 
+  set_engine("ranger")
+rf_mod
+```
+Workflow
+```{r}
+rf_wf <- workflow() %>%
+  add_recipe(norm_recipe) %>%
+  add_model(rf_mod)
+rf_wf
+```
+Tuning grid
+```{r}
+param_grid_rf <- grid_regular(
+  trees(range = c(100L, 400L)), 
+  mtry(range = c(1L, 7L)),
+  levels = c(3, 5)
+  )
+param_grid_rf
+```
+
+Fit cross-validation
+```{r}
+rf_fit <- rf_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = param_grid_rf,
+    metrics = metric_set(roc_auc, accuracy),
+    control = control_stack_grid()
+    )
+rf_fit
+```
+
+Visualize CV results
+```{r}
+rf_fit %>%
+  collect_metrics() %>%
+  print(width = Inf) %>%
+  filter(.metric == "roc_auc") %>%
+  mutate(mtry = as.factor(mtry)) %>%
+  ggplot(mapping = aes(x = trees, y = mean, color = mtry)) +
+  # geom_point() + 
+  geom_line() + 
+  labs(x = "Num. of Trees", y = "CV AUC")
+```
+Show the top 5 models
+```{r}
+rf_fit %>%
+  show_best("roc_auc")
+```
+Select the best model
+```{r}
+best_rf <- rf_fit %>%
+  select_best("roc_auc")
+best_rf
+```
+
+
+Boosting
+```{r}
+gb_mod <- 
+  boost_tree(
+    mode = "classification",
+    trees = 1000, 
+    tree_depth = tune(),
+    learn_rate = tune()
+  ) %>% 
+  set_engine("xgboost")
+gb_mod
+```
+
+Workflow
+```{r}
+gb_wf <- workflow() %>%
+  add_recipe(norm_recipe) %>%
+  add_model(gb_mod)
+gb_wf
+```
+Tuning grid
+```{r}
+param_grid_gb <- grid_regular(
+  tree_depth(range = c(1L, 3L)),
+  learn_rate(range = c(-5, 2), trans = log10_trans()),
+  levels = c(3, 10)
+  )
+param_grid_gb
+```
+
+Fit cross-validation
+```{r}
+gb_fit <- gb_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = param_grid_gb,
+    metrics = metric_set(roc_auc, accuracy),
+    control = control_stack_grid()
+    )
+gb_fit
+```
+
+Visualize CV results
+```{r}
+gb_fit %>%
+  collect_metrics() %>%
+  print(width = Inf) %>%
+  filter(.metric == "roc_auc") %>%
+  mutate(tree_depth = as.factor(tree_depth)) %>%
+  ggplot(mapping = aes(x = learn_rate, y = mean, color = tree_depth)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Learning Rate", y = "CV AUC") +
+  scale_x_log10()
+```
+Show the top 5 models
+```{r}
+gb_fit %>%
+  show_best("roc_auc")
+```
+Select the best model
+```{r}
+best_gb <- gb_fit %>%
+  select_best("roc_auc")
+best_gb
+```
+
+SVM with radial kernel
+```{r}
+# svm_mod <- 
+#   svm_rbf(
+#     mode = "classification",
+#     cost = tune(),
+#     rbf_sigma = tune()
+#   ) %>% 
+#   set_engine("kernlab")
+# svm_mod
+```
+
+Workflow
+```{r}
+# svm_wf <- workflow() %>%
+#   add_recipe(norm_recipe) %>%
+#   add_model(svm_mod)
+# svm_wf
+```
+
+Tuning grid
+```{r}
+# param_grid <- grid_regular(
+#   cost(range = c(-8, 5)),
+#   rbf_sigma(range = c(-5, -3)),
+#   levels = c(14, 5)
+#   )
+# param_grid
+```
+
+Fit cross-validation
+```{r}
+# svm_fit <- svm_wf %>%
+#   tune_grid(
+#     resamples = folds,
+#     grid = param_grid,
+#     metrics = metric_set(roc_auc, accuracy)
+#     )
+# svm_fit
+```
+
+
+Stacking
+
+```{r}
+model_st <- 
+  # initialize the stack
+  stacks() |>
+  # add candidate members
+  add_candidates(enet_fit) |>
+  add_candidates(rf_fit) |>
+  add_candidates(gb_fit) |>
+  # determine how to combine their predictions
+  blend_predictions(
+    penalty = 10^(-6:2),
+    metrics = c("roc_auc")
+    ) |>
+  # fit the candidates with nonzero stacking coefficients
+  fit_members()
+
+model_st
+```
+
+Plot
+```{r}
+autoplot(model_st)
+```
+
+```{r}
+autoplot(model_st, type = "members")
+```
+
+```{r}
+autoplot(model_st, type = "weights")
+```
+
+```{r}
+collect_parameters(model_st, "rf_fit")
+```
+
+
+4. Compare model classification performance on the test set. Report both the area under ROC curve and accuracy for each machine learning algorithm and the model stacking. Interpret the results. What are the most important features in predicting long ICU stays? How do the models compare in terms of performance and interpretability?
+
+Logistic regression
+```{r}
+# Final workflow
+lr_final_wf <- lr_wf |>
+  finalize_workflow(best_logit)
+lr_final_wf
+```
+```{r}
+# Fit the whole training set, then predict the test cases
+lr_final_fit <- 
+  lr_final_wf |>
+  last_fit(data_split)
+lr_final_fit
+```
+
+```{r}
+# Test metrics
+lr_final_fit |> 
+  collect_metrics()
+```
+
+```{r}
+final_tree_lr <- extract_workflow(lr_final_fit)
+final_tree_lr
+```
+
+```{r}
+final_tree_lr %>%
+  extract_fit_parsnip() %>%
+  vip()
+```
+
+Random forest
+```{r}
+# Final workflow
+rf_final_wf <- rf_wf %>%
+  finalize_workflow(best_rf)
+rf_final_wf
+```
+```{r}
+# Fit the whole training set, then predict the test cases
+rf_final_fit <- 
+  rf_final_wf %>%
+  last_fit(data_split)
+rf_final_fit
+```
+
+```{r}
+# Test metrics
+rf_final_fit %>% 
+  collect_metrics()
+```
+```{r}
+final_tree_rf <- extract_workflow(rf_final_fit)
+final_tree_rf
+```
+
+```{r}
+# final_tree_rf %>%
+#   extract_fit_parsnip() %>%
+#   vip()
+```
+
+
+
+Boosting
+```{r}
+# Final workflow
+gb_final_wf <- gb_wf %>%
+  finalize_workflow(best_gb)
+gb_final_wf
+```
+
+```{r}
+# Fit the whole training set, then predict the test cases
+gb_final_fit <- 
+  gb_final_wf %>%
+  last_fit(data_split)
+gb_final_fit
+```
+
+```{r}
+# Test metrics
+gb_final_fit %>% 
+  collect_metrics()
+```
+
+```{r}
+final_tree_gb <- extract_workflow(gb_final_fit)
+final_tree_gb
+```
+
+```{r}
+final_tree_gb %>%
+  extract_fit_parsnip() %>%
+  vip()
+```
+
+Stacking
+```{r}
+mimic_pred <- mimic_test %>%
+  bind_cols(predict(model_st, ., type = "prob")) %>%
+  print(width = Inf)
+```
+
+Computing the ROC AUC for the model:
+```{r}
+roc_auc_res <- roc_auc(data = mimic_pred, truth = los_long, .pred_long)
+print(roc_auc_res)
+```
+
+```{r}
+mimic_pred <-
+  mimic_test |>
+  select(los_long) |>
+  bind_cols(
+    predict(
+      model_st,
+      mimic_test,
+      type = "class",
+      members = TRUE
+      )
+    ) |>
+  print(width = Inf)
+```
+
+```{r}
+map(
+  colnames(mimic_pred),
+  ~mean(mimic_pred$los_long == pull(mimic_pred, .x))
+  ) |>
+  set_names(colnames(mimic_pred)) |>
+  as_tibble() |>
+  pivot_longer(c(everything(), -los_long))
+```
+
+
+
+
+
