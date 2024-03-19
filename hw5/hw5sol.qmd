@@ -34,6 +34,7 @@ library(keras)
 library(stacks)
 library(vip)
 library(rpart)
+library(tensorflow)
 ```
 
 1. Data preprocessing and feature engineering.
@@ -236,7 +237,7 @@ rf_mod <-
     # Number of trees in ensemble
     trees = tune()
   ) %>% 
-  set_engine("ranger")
+  set_engine("ranger", importance = "impurity")
 rf_mod
 ```
 Workflow
@@ -362,12 +363,12 @@ best_gb
 
 SVM with radial kernel
 ```{r}
-# svm_mod <- 
+# svm_mod <-
 #   svm_rbf(
 #     mode = "classification",
 #     cost = tune(),
 #     rbf_sigma = tune()
-#   ) %>% 
+#   ) %>%
 #   set_engine("kernlab")
 # svm_mod
 ```
@@ -401,6 +402,72 @@ Fit cross-validation
 # svm_fit
 ```
 
+MLP
+```{r}
+mlp_mod <- 
+  mlp(
+    mode = "classification",
+    hidden_units = tune(),
+    dropout = tune(),
+    epochs = 50,
+  ) |> 
+  set_engine("keras", verbose = 0)
+mlp_mod
+```
+
+Workflow
+```{r}
+mlp_wf <- workflow() |>
+  add_recipe(norm_recipe) |>
+  add_model(mlp_mod)
+mlp_wf
+```
+Tuning grid
+```{r}
+param_grid_mlp <- grid_regular(
+  hidden_units(range = c(1, 20)),
+  dropout(range = c(0, 0.6)),
+  levels = 5
+  )
+param_grid_mlp
+```
+Fit cross-validation
+```{r}
+mlp_fit <- mlp_wf |>
+  tune_grid(
+    resamples = folds,
+    grid = param_grid_mlp,
+    metrics = metric_set(roc_auc, accuracy)
+    )
+mlp_fit
+```
+
+Visualize CV results
+```{r}
+mlp_fit |>
+  collect_metrics() |>
+  print(width = Inf) |>
+  filter(.metric == "roc_auc") |>
+  ggplot(mapping = aes(x = dropout, y = mean, color = factor(hidden_units))) +
+  geom_point() +
+  labs(x = "Dropout Rate", y = "CV AUC") +
+  scale_x_log10()
+```
+
+Show the top 5 models
+```{r}
+mlp_fit |>
+  show_best("roc_auc")
+```
+Select the best model
+```{r}
+best_mlp <- mlp_fit |>
+  select_best("roc_auc")
+best_mlp
+```
+
+
+
 
 Stacking
 
@@ -409,7 +476,7 @@ model_st <-
   # initialize the stack
   stacks() |>
   # add candidate members
-  add_candidates(enet_fit) |>
+  # add_candidates(enet_fit) |>
   add_candidates(rf_fit) |>
   add_candidates(gb_fit) |>
   # determine how to combine their predictions
@@ -501,9 +568,9 @@ final_tree_rf
 ```
 
 ```{r}
-# final_tree_rf %>%
-#   extract_fit_parsnip() %>%
-#   vip()
+final_tree_rf %>%
+  extract_fit_parsnip() %>%
+  vip()
 ```
 
 
