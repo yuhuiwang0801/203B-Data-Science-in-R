@@ -308,7 +308,9 @@ gb_fit %>%
   print(width = Inf) %>%
   filter(.metric == "roc_auc") %>%
   mutate(tree_depth = as.factor(tree_depth)) %>%
-  ggplot(mapping = aes(x = learn_rate, y = mean, color = tree_depth)) +
+  ggplot(mapping = aes(x = learn_rate, 
+                       y = mean, 
+                       color = tree_depth)) +
   geom_point() +
   geom_line() +
   labs(x = "Learning Rate", y = "CV AUC") +
@@ -415,7 +417,8 @@ Visualize CV results
 #   collect_metrics() |>
 #   print(width = Inf) |>
 #   filter(.metric == "roc_auc") |>
-#   ggplot(mapping = aes(x = dropout, y = mean, color = factor(hidden_units))) +
+# ggplot(mapping = aes(x = dropout, y = mean, 
+#                      color = factor(hidden_units))) +
 #   geom_point() +
 #   labs(x = "Dropout Rate", y = "CV AUC") +
 #   scale_x_log10()
