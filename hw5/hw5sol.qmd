@@ -47,11 +47,13 @@ mimic_icu_cohort <- readRDS("./mimic_icu_cohort.rds")
 Feature engineering
 ```{r}
 mimic_icu_cohort <- mimic_icu_cohort %>%
-  select(-c(last_careunit, 
-            outtime, dischtime, deathtime, discharge_location, 
-            edouttime, hospital_expire_flag, los, dod, 
-            admit_provider_id, intime, admittime, 
-            edregtime, anchor_year_group)) %>%
+  select(-c(
+    last_careunit,
+    outtime, dischtime, deathtime, discharge_location,
+    edouttime, hospital_expire_flag, los, dod,
+    admit_provider_id, intime, admittime,
+    edregtime, anchor_year_group
+  )) %>%
   mutate(los_long = factor(ifelse(los_long, "long", "short"))) %>%
   mutate(across(where(is.character), as.factor))
 ```
@@ -69,7 +71,7 @@ set.seed(203)
 # sort
 mimiciv_icu_cohort <- mimic_icu_cohort |>
   arrange(subject_id, hadm_id, stay_id) |>
-  select(-c(subject_id, hadm_id, stay_id)) 
+  select(-c(subject_id, hadm_id, stay_id))
 
 data_split <- initial_split(
   mimiciv_icu_cohort,
@@ -95,7 +97,7 @@ dim(mimic_test)
 
 Recipe
 ```{r}
-norm_recipe <- 
+norm_recipe <-
   recipe(
     los_long ~ .,
     data = mimic_other
@@ -127,10 +129,11 @@ folds
 ```{r}
 enet_mod <-
   logistic_reg(
-    penalty = tune(), 
+    penalty = tune(),
     mixture = tune(),
-    mode = "classification") %>%
-  set_engine("glmnet") 
+    mode = "classification"
+  ) %>%
+  set_engine("glmnet")
 enet_mod
 ```
 
@@ -146,24 +149,24 @@ lr_wf
 Tuning grid
 ```{r}
 param_grid_lr <- grid_regular(
-  penalty(range = c(-6, 3)), 
+  penalty(range = c(-6, 3)),
   mixture(),
   levels = c(100, 5)
-  )
+)
 param_grid_lr
 ```
 
 
 Fit cross-validation
 ```{r}
-enet_fit <- 
+enet_fit <-
   lr_wf %>%
   tune_grid(
     resamples = folds,
     grid = param_grid_lr,
     metrics = metric_set(roc_auc, accuracy),
     control = control_stack_grid()
-    )
+  )
 enet_fit
 ```
 Visualize CV results
@@ -195,14 +198,14 @@ best_logit
 
 ## Random forest
 ```{r}
-rf_mod <- 
+rf_mod <-
   rand_forest(
     mode = "classification",
     # Number of predictors randomly sampled in each split
     mtry = tune(),
     # Number of trees in ensemble
     trees = tune()
-  ) %>% 
+  ) %>%
   set_engine("ranger", importance = "impurity")
 rf_mod
 ```
@@ -216,10 +219,10 @@ rf_wf
 Tuning grid
 ```{r}
 param_grid_rf <- grid_regular(
-  trees(range = c(500L, 700L)), 
+  trees(range = c(500L, 700L)),
   mtry(range = c(2L, 7L)),
   levels = c(3, 5)
-  )
+)
 param_grid_rf
 ```
 
@@ -231,7 +234,7 @@ rf_fit <- rf_wf %>%
     grid = param_grid_rf,
     metrics = metric_set(roc_auc, accuracy),
     control = control_stack_grid()
-    )
+  )
 rf_fit
 ```
 
@@ -243,8 +246,8 @@ rf_fit %>%
   filter(.metric == "roc_auc") %>%
   mutate(mtry = as.factor(mtry)) %>%
   ggplot(mapping = aes(x = trees, y = mean, color = mtry)) +
-  # geom_point() + 
-  geom_line() + 
+  # geom_point() +
+  geom_line() +
   labs(x = "Num. of Trees", y = "CV AUC")
 ```
 Show the top 5 models
@@ -261,13 +264,13 @@ best_rf
 
 ## Boosting
 ```{r}
-gb_mod <- 
+gb_mod <-
   boost_tree(
     mode = "classification",
-    trees = 1000, 
+    trees = 1000,
     tree_depth = tune(),
     learn_rate = tune()
-  ) %>% 
+  ) %>%
   set_engine("xgboost")
 gb_mod
 ```
@@ -285,7 +288,7 @@ param_grid_gb <- grid_regular(
   tree_depth(range = c(1L, 3L)),
   learn_rate(range = c(-5, 2), trans = log10_trans()),
   levels = c(3, 10)
-  )
+)
 param_grid_gb
 ```
 
@@ -297,7 +300,7 @@ gb_fit <- gb_wf %>%
     grid = param_grid_gb,
     metrics = metric_set(roc_auc, accuracy),
     control = control_stack_grid()
-    )
+  )
 gb_fit
 ```
 
@@ -308,9 +311,11 @@ gb_fit %>%
   print(width = Inf) %>%
   filter(.metric == "roc_auc") %>%
   mutate(tree_depth = as.factor(tree_depth)) %>%
-  ggplot(mapping = aes(x = learn_rate, 
-                       y = mean, 
-                       color = tree_depth)) +
+  ggplot(mapping = aes(
+    x = learn_rate,
+    y = mean,
+    color = tree_depth
+  )) +
   geom_point() +
   geom_line() +
   labs(x = "Learning Rate", y = "CV AUC") +
@@ -373,13 +378,13 @@ Fit cross-validation
 ## MLP
 Since MLP will take a much long time to run, we will not run it here. But the code is provided below.
 ```{r}
-# mlp_mod <- 
+# mlp_mod <-
 #   mlp(
 #     mode = "classification",
 #     hidden_units = tune(),
 #     dropout = tune(),
 #     epochs = 50,
-#   ) |> 
+#   ) |>
 #   set_engine("keras", verbose = 0)
 # mlp_mod
 ```
@@ -417,7 +422,7 @@ Visualize CV results
 #   collect_metrics() |>
 #   print(width = Inf) |>
 #   filter(.metric == "roc_auc") |>
-# ggplot(mapping = aes(x = dropout, y = mean, 
+# ggplot(mapping = aes(x = dropout, y = mean,
 #                      color = factor(hidden_units))) +
 #   geom_point() +
 #   labs(x = "Dropout Rate", y = "CV AUC") +
@@ -440,7 +445,7 @@ Select the best model
 ## Stacking
 As logistic regression has a comparable lower performance than random forest and boosting from my experiments, here we will not put it as an candidate in stacking model.
 ```{r}
-model_st <- 
+model_st <-
   # initialize the stack
   stacks() |>
   # add candidate members
@@ -451,7 +456,7 @@ model_st <-
   blend_predictions(
     penalty = 10^(-6:2),
     metrics = c("roc_auc", "accuracy")
-    ) |>
+  ) |>
   # fit the candidates with nonzero stacking coefficients
   fit_members()
 
@@ -488,7 +493,7 @@ lr_final_wf
 ```
 ```{r}
 # Fit the whole training set, then predict the test cases
-lr_final_fit <- 
+lr_final_fit <-
   lr_final_wf |>
   last_fit(data_split)
 lr_final_fit
@@ -496,7 +501,7 @@ lr_final_fit
 
 ```{r}
 # Test metrics
-lr_final_fit |> 
+lr_final_fit |>
   collect_metrics()
 ```
 
@@ -520,7 +525,7 @@ rf_final_wf
 ```
 ```{r}
 # Fit the whole training set, then predict the test cases
-rf_final_fit <- 
+rf_final_fit <-
   rf_final_wf %>%
   last_fit(data_split)
 rf_final_fit
@@ -528,7 +533,7 @@ rf_final_fit
 
 ```{r}
 # Test metrics
-rf_final_fit %>% 
+rf_final_fit %>%
   collect_metrics()
 ```
 ```{r}
@@ -552,7 +557,7 @@ gb_final_wf
 
 ```{r}
 # Fit the whole training set, then predict the test cases
-gb_final_fit <- 
+gb_final_fit <-
   gb_final_wf %>%
   last_fit(data_split)
 gb_final_fit
@@ -560,7 +565,7 @@ gb_final_fit
 
 ```{r}
 # Test metrics
-gb_final_fit %>% 
+gb_final_fit %>%
   collect_metrics()
 ```
 
@@ -583,14 +588,14 @@ MLP
 ```
 
 ```{r}
-# mlp_final_fit <- 
+# mlp_final_fit <-
 #   mlp_final_wf |>
 #   last_fit(data_split)
 # mlp_final_fit
 ```
 
 ```{r}
-# mlp_final_fit |> 
+# mlp_final_fit |>
 #   collect_metrics()
 ```
 
@@ -631,16 +636,16 @@ mimic_pred <-
       mimic_test,
       type = "class",
       members = TRUE
-      )
-    ) |>
+    )
+  ) |>
   print(width = Inf)
 ```
 
 ```{r}
 map(
   colnames(mimic_pred),
-  ~mean(mimic_pred$los_long == pull(mimic_pred, .x))
-  ) |>
+  ~ mean(mimic_pred$los_long == pull(mimic_pred, .x))
+) |>
   set_names(colnames(mimic_pred)) |>
   as_tibble() |>
   pivot_longer(c(everything(), -los_long))
@@ -664,4 +669,3 @@ From the variable importance plot, we can see that important features are those 
 From the table, we can see that stack model is a little bit better than random forest and boosting on performance of accuracy and AUC. However, stack model will lose its interpretability, as it is a combination of random forest and boosting models. We cannot interpret which feature is more significant in predicting long ICU stays. 
 
 When performances of models are close, we will prefer the simplier model in order to have a better interpretability. Therefore, with a trade-off between performance and interpretability, we will prefer to lose a little bit performance to choose random forest model or boosting model as the best model to predict long ICU stays since it has the best balance of performance and interpretability.
-
