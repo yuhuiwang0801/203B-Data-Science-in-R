@@ -580,7 +580,7 @@ final_tree_gb %>%
   vip()
 ```
 
-MLP
+## MLP
 ```{r}
 # mlp_final_wf <- mlp_wf |>
 #   finalize_workflow(best_mlp)
